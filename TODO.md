@@ -40,4 +40,4 @@
 - Use less `await`.
 
 ## Code
-- Use consistent structure.
+- Use consistent structure (inside script).

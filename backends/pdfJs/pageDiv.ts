@@ -9,7 +9,7 @@ export class PageDiv extends HTMLDivElement {
   private canvas: HTMLCanvasElement | null = null;
 
   constructor(
-    public position: number,
+    public pageNumber: number,
     public width: number,
     public height: number,
     private scale: number,

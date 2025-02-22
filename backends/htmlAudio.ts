@@ -1,27 +1,33 @@
 import { useLogger } from "@/logging";
-import { AudiobookBackend, type EndedCallback, type ProgressCallback } from "@/backends/audiobook";
+import { AudiobookBackend, type AudiobookBackendOptions } from "@/backends/audiobook";
 import type { Outline } from "@/backends/outline";
+import type { AudiobookPosition } from "@/models";
 
 const { debug } = useLogger("htmlAudio");
 
 export class HtmlAudio extends AudiobookBackend {
   private audio!: HTMLAudioElement;
+  private options!: AudiobookBackendOptions;
 
-  async open(blob: Blob, progressCb: ProgressCallback, endedCb: EndedCallback) {
+  onError() {
+    throw this.audio.error;
+  }
+
+  onTimeUpdate() {
+    const position = { id: this.audio.currentTime };
+    this.options.positionCb(position);
+  }
+
+  async open(blob: Blob, options: AudiobookBackendOptions) {
     this.audio = new Audio(URL.createObjectURL(blob));
-    this.audio.addEventListener("error", () => {
-      if (this.audio.src) throw this.audio.error;
-    });
-    this.audio.addEventListener("timeupdate", () => progressCb(this.audio.currentTime));
-    this.audio.addEventListener("seeked", () =>
-      debug(`Seeked to position: ${this.audio.currentTime}`),
-    );
-    this.audio.addEventListener("ended", () => endedCb());
+    this.options = options;
+    this.audio.addEventListener("error", () => this.onError());
+    this.audio.addEventListener("timeupdate", () => this.onTimeUpdate());
   }
 
   async close() {
     this.audio.pause();
-    this.audio.src = "";
+    URL.revokeObjectURL(this.audio.src);
   }
 
   async getName(): Promise<string> {
@@ -49,8 +55,8 @@ export class HtmlAudio extends AudiobookBackend {
     return [];
   }
 
-  async setPosition(position: number) {
-    this.audio.currentTime = position;
+  async setPosition(position: AudiobookPosition) {
+    this.audio.currentTime = position.id;
   }
 
   async play() {

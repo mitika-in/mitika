@@ -1,13 +1,24 @@
+import { type Position } from "@/models";
 import { type Outline } from "@/backends/outline";
 
-export type ProgressCallback = (position: number) => void;
+export type PasswordRequiredCallback = (
+  callback: (password: string) => void,
+  retry: boolean,
+) => void;
+
+export type PositionChangedCallback = (position: Position) => void;
+
+export interface BackendOptions {
+  passwordCb: PasswordRequiredCallback;
+  positionCb: PositionChangedCallback;
+}
 
 export abstract class Backend {
+  abstract open(blob: Blob, options: BackendOptions): Promise<void>;
   abstract close(): Promise<void>;
-  abstract getName(): Promise<string>;
   abstract getAuthors(): Promise<string[]>;
   abstract getCover(): Promise<Blob | null>;
-  abstract getLength(): Promise<number>;
+  abstract getName(): Promise<string>;
   abstract getOutlines(): Promise<Outline[]>;
-  abstract setPosition(position: number): Promise<void>;
+  abstract setPosition(position: Position): Promise<void>;
 }

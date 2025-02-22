@@ -1,5 +1,7 @@
+import type { Position } from "@/models";
+
 export interface Outline {
   name: string;
-  destination: { position: number; x: number; y: number };
+  position: Position;
   children: Outline[];
 }

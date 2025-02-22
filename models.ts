@@ -2,19 +2,21 @@ function uuid(): string {
   return window.crypto.randomUUID();
 }
 
+export interface Position {}
+
 export interface Mark {
   id: string;
   parentId: string;
   name: string;
   description: string;
-  position: number;
+  position: Position;
 }
 
 export function createMark(
   parentId: string,
   name: string,
   description: string,
-  position: number,
+  position: string,
 ): Mark {
   return { id: uuid(), parentId, name, description, position };
 }
@@ -24,18 +26,16 @@ export interface Note {
   parentId: string;
   name: string;
   description: string;
-  position: number;
-  options: object;
+  position: Position;
 }
 
 export function createNote(
   parentId: string,
   name: string,
   description: string,
-  position: number,
-  options: object,
+  position: string,
 ): Note {
-  return { id: uuid(), parentId, name, description, position, options };
+  return { id: uuid(), parentId, name, description, position };
 }
 
 export enum ItemType {
@@ -56,14 +56,19 @@ export interface Item {
   parentId: string;
   name: string;
   file: File;
-  length: number;
-  position: number;
+  position: Position;
   openingFirstTime: boolean;
 }
 
+export interface AudiobookPosition extends Position {
+  id: number;
+}
+
 export interface Audiobook extends Item {
-  volume: number;
+  length: number;
+  position: AudiobookPosition;
   rate: number;
+  volume: number;
 }
 
 export function createAudiobook(parentId: string, name: string, file: File): Audiobook {
@@ -74,24 +79,37 @@ export function createAudiobook(parentId: string, name: string, file: File): Aud
     name,
     file,
     length: 1,
-    position: 0,
+    position: { id: 0 },
     openingFirstTime: true,
     volume: 1,
     rate: 1,
   };
 }
 
-export enum PageLayout {
+export interface EbookColor {
+  foreground: number;
+  background: number;
+}
+
+export enum EbookLayout {
   SINGLE,
   DUAL_START,
   DUAL_END,
 }
 
+export interface EbookPosition extends Position {
+  id: string;
+  name: string;
+  x: number;
+  y: number;
+}
+
 export interface Ebook extends Item {
+  color: EbookColor;
+  layout: EbookLayout;
+  position: EbookPosition;
+  rotation: number;
   scale: number;
-  layout: PageLayout;
-  black: number;
-  white: number;
 }
 
 export function createEbook(parentId: string, name: string, file: File): Ebook {
@@ -101,13 +119,12 @@ export function createEbook(parentId: string, name: string, file: File): Ebook {
     parentId,
     name,
     file,
-    length: 1,
-    position: 1,
+    position: { id: "", name: "1", x: 0, y: 0 },
     openingFirstTime: true,
+    color: { foreground: 0x000, background: 0xfff },
+    layout: EbookLayout.DUAL_START,
+    rotation: 0,
     scale: 1,
-    layout: PageLayout.DUAL_START,
-    black: 0x000000,
-    white: 0xffffff,
   };
 }
 

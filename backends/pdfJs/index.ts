@@ -1,10 +1,5 @@
 import { useLogger } from "@/logging";
-import {
-  EbookBackend,
-  type EbookPageView,
-  type PasswordCallback,
-  type ScaleChangedCallback,
-} from "@/backends/ebook";
+import { EbookBackend, type EbookBackendOptions } from "@/backends/ebook";
 import { type Outline } from "@/backends/outline";
 import { PageDivType, PageDiv } from "@/backends/pdfJs/pageDiv";
 import {
@@ -16,8 +11,7 @@ import {
   RenderingCancelledException,
 } from "pdfjs-dist";
 import workerURL from "pdfjs-dist/build/pdf.worker?url";
-import type { ProgressCallback } from "@/backends/backend";
-import { PageLayout } from "@/models";
+import { type EbookColor, EbookLayout, type EbookPosition } from "@/models";
 
 const { f, debug, warn } = useLogger("pdfJs");
 
@@ -41,12 +35,12 @@ async function parseOutline(doc: PDFDocumentProxy, rawOutline: RawOutline[]): Pr
       warn(f`Destination resolved to null for destination=${dest} in outline item=${rawItem}`);
       continue;
     }
-    const position = await doc.getPageIndex(dest[0]);
+    const position = (await doc.getPageIndex(dest[0])).toString();
     const x = 0;
     const y = 0;
     const item = {
       name: rawItem.title,
-      destination: { position, x, y },
+      position: { id: position, name: position, x, y },
       children: await parseOutline(doc, rawItem.items),
     };
     outline.push(item);
@@ -66,37 +60,37 @@ function computeVisibleRatio(pTop: number, pBottom: number, cTop: number, cBotto
   return 1;
 }
 
-function spreads(layout: PageLayout, length: number): number {
-  if (layout == PageLayout.SINGLE) return length;
-  else if (layout == PageLayout.DUAL_START) return Math.ceil(length / 2);
-  else if (layout == PageLayout.DUAL_END) return Math.ceil((length + 1) / 2);
+function spreads(layout: EbookLayout, length: number): number {
+  if (layout == EbookLayout.SINGLE) return length;
+  else if (layout == EbookLayout.DUAL_START) return Math.ceil(length / 2);
+  else if (layout == EbookLayout.DUAL_END) return Math.ceil((length + 1) / 2);
   else throw new TypeError(`Unknown layout: ${layout}`);
 }
 
-function spreadToPages(layout: PageLayout, spread: number): number[] {
-  if (layout == PageLayout.SINGLE) return [spread];
-  else if (layout == PageLayout.DUAL_START) return [2 * spread - 1, 2 * spread];
-  else if (layout == PageLayout.DUAL_END) return [2 * (spread - 1), 2 * spread - 1];
+function spreadToPages(layout: EbookLayout, spread: number): number[] {
+  if (layout == EbookLayout.SINGLE) return [spread];
+  else if (layout == EbookLayout.DUAL_START) return [2 * spread - 1, 2 * spread];
+  else if (layout == EbookLayout.DUAL_END) return [2 * (spread - 1), 2 * spread - 1];
   else throw new TypeError(`Unknown layout: ${layout}`);
 }
 
-function dummyOrPage(pages: PageDiv[], position: number): { dummy: boolean; page: PageDiv } {
-  if (position < 1) return { dummy: true, page: pages[0] };
-  else if (position > pages.length) return { dummy: true, page: pages[pages.length - 1] };
-  else return { dummy: false, page: pages[position - 1] };
+function dummyOrPage(pages: PageDiv[], pageNumber: number): { dummy: boolean; page: PageDiv } {
+  if (pageNumber < 1) return { dummy: true, page: pages[0] };
+  else if (pageNumber > pages.length) return { dummy: true, page: pages[pages.length - 1] };
+  else return { dummy: false, page: pages[pageNumber - 1] };
 }
 
 function getSpreadForPosition(
   position: number,
   length: number,
-  layout: PageLayout,
+  layout: EbookLayout,
 ): [start: number, end: number] {
   let start = 0;
   let end = 0;
 
-  if (layout == PageLayout.SINGLE) {
+  if (layout == EbookLayout.SINGLE) {
     start = position;
-  } else if (layout == PageLayout.DUAL_START) {
+  } else if (layout == EbookLayout.DUAL_START) {
     if (position % 2 == 1) {
       start = position;
       end = position + 1;
@@ -104,7 +98,7 @@ function getSpreadForPosition(
       start = position - 1;
       end = position;
     }
-  } else if (layout == PageLayout.DUAL_END) {
+  } else if (layout == EbookLayout.DUAL_END) {
     if (position % 2 == 1) {
       start = position - 1;
       end = position;
@@ -123,26 +117,22 @@ function getSpreadForPosition(
 }
 
 interface RenderingOptions {
+  color: EbookColor;
   scale: number;
   rotation: number;
-  colors: { black: number; white: number };
 }
 
 const DPR = window.devicePixelRatio || 1;
 
 export class PdfJs extends EbookBackend {
-  private container!: HTMLDivElement;
-  private gap = 0;
-  private progressCb: ProgressCallback = () => null;
-  private scaleCb: ScaleChangedCallback = () => null;
+  private options!: EbookBackendOptions;
+  private blobUrl!: string;
 
-  private position = 1;
-  private length = 1;
-  private layout: PageLayout = PageLayout.DUAL_START;
+  private pageNumber: number = 1;
+  private color: EbookColor = { foreground: 0x000, background: 0xfff };
+  private layout: EbookLayout = EbookLayout.DUAL_END;
   private scale: number = 1;
   private rotation: number = 0;
-  private white = 0xffffff;
-  private black = 0x000000;
 
   private doc!: PDFDocumentProxy;
   private tasks = new Map<CanvasRenderingContext2D, RenderTask>();
@@ -152,39 +142,49 @@ export class PdfJs extends EbookBackend {
   private visiblePages = new Set<number>();
   private observer!: IntersectionObserver;
 
-  private computeVisiblePosition() {
-    let visiblePosition = this.position;
+  private updatePosition() {
+    let pageNumber = this.pageNumber;
     let maxRatio = 0;
-    const { top: pTop, bottom: pBottom } = this.container.getBoundingClientRect();
+    const { top: pTop, bottom: pBottom } = this.options.container.getBoundingClientRect();
 
     for (const page of this.pages) {
-      if (!this.visiblePages.has(page.position)) continue;
+      if (!this.visiblePages.has(page.pageNumber)) continue;
 
       const { top: cTop, bottom: cBottom } = page.getBoundingClientRect();
       const ratio = computeVisibleRatio(pTop, pBottom, cTop, cBottom);
       if (ratio >= maxRatio) {
         maxRatio = ratio;
-        visiblePosition = page.position;
+        pageNumber = page.pageNumber;
       }
     }
 
-    debug(`Setting position: ${visiblePosition} (${Math.floor(maxRatio * 100)}% visible)`);
-    this.position = visiblePosition;
-    this.progressCb(this.position);
+    debug(`Updating page number to ${pageNumber} (${Math.floor(maxRatio * 100)}% visible)`);
+    this.pageNumber = pageNumber;
+    this.options.positionCb({
+      id: this.pageNumber.toString(),
+      name: this.pageNumber.toString(),
+      x: 0,
+      y: 0,
+    });
   }
 
-  async renderPage(position: number, context: CanvasRenderingContext2D, options: RenderingOptions) {
-    debug(`Rendering page: ${position}`);
+  async renderPage(
+    pageNumber: number,
+    context: CanvasRenderingContext2D,
+    options: RenderingOptions,
+  ) {
+    debug(`Rendering page: ${pageNumber}`);
 
     if (this.tasks.has(context)) {
-      debug(`Canceling existing rendering task for page: ${position}`);
+      debug(`Canceling existing rendering task for page: ${pageNumber}`);
       const task = this.tasks.get(context);
       task?.cancel();
     }
 
-    const proxy = await this.doc.getPage(position);
+    const proxy = await this.doc.getPage(pageNumber);
     const viewport = proxy.getViewport({
       scale: options.scale,
+      rotation: options.rotation,
     });
     const transform = [DPR, 0, 0, DPR, 0, 0];
     const task = proxy.render({ canvasContext: context, transform, viewport });
@@ -192,10 +192,10 @@ export class PdfJs extends EbookBackend {
 
     try {
       await task.promise;
-      debug(`Rendered page: ${position}`);
+      debug(`Rendered page: ${pageNumber}`);
     } catch (error) {
       if (error instanceof RenderingCancelledException)
-        debug(`Rendering canceled for page: ${position}`);
+        debug(`Rendering canceled for page: ${pageNumber}`);
       else throw error;
     } finally {
       this.tasks.delete(context);
@@ -203,12 +203,12 @@ export class PdfJs extends EbookBackend {
   }
 
   private async queueRender(page: PageDiv) {
-    debug(`Queueing page: ${page.position}`);
+    debug(`Queueing render for page: ${page.pageNumber}`);
     const context = page.createCanvas();
-    await this.renderPage(page.position, context, {
-      scale: this.scale,
+    await this.renderPage(page.pageNumber, context, {
+      color: this.color,
       rotation: this.rotation,
-      colors: { white: this.white, black: this.black },
+      scale: this.scale,
     });
   }
 
@@ -216,26 +216,27 @@ export class PdfJs extends EbookBackend {
     for (const entry of entries) {
       const page = entry.target as PageDiv;
       if (entry.isIntersecting) {
-        if (!this.visiblePages.has(page.position)) {
-          this.visiblePages.add(page.position);
+        if (!this.visiblePages.has(page.pageNumber)) {
+          this.visiblePages.add(page.pageNumber);
           await this.queueRender(page);
         }
       } else {
-        this.visiblePages.delete(page.position);
+        this.visiblePages.delete(page.pageNumber);
         page.destroyCanvas();
       }
     }
 
-    this.computeVisiblePosition();
+    this.updatePosition();
   }
 
   private async setup() {
-    this.container.style.display = "flex";
-    this.container.style.flexDirection = "column";
-    this.container.style.flexGrow = "1";
-    this.container.style.gap = "16px";
-    this.container.style.height = "0px";
-    this.container.style.overflow = "scroll";
+    const container = this.options.container;
+    container.style.display = "flex";
+    container.style.flexDirection = "column";
+    container.style.flexGrow = "1";
+    container.style.gap = "16px";
+    container.style.height = "0px";
+    container.style.overflow = "scroll";
 
     for (let i = 1; i <= this.doc.numPages; i++) {
       const proxy = await this.doc.getPage(i);
@@ -246,37 +247,33 @@ export class PdfJs extends EbookBackend {
     }
   }
 
-  async open(
-    blob: Blob,
-    container: HTMLDivElement,
-    gap: number,
-    progressCb: ProgressCallback,
-    scaleCb: ScaleChangedCallback,
-    passwordCb: PasswordCallback,
-  ) {
-    this.container = container;
-    this.gap = gap;
-    const task = getDocument(URL.createObjectURL(blob));
-    task.onPassword = (cb: (passowrd: string) => void, reason: number) =>
-      passwordCb(cb, reason == PasswordResponses.INCORRECT_PASSWORD);
+  onPassword(cb: (passowrd: string) => void, reason: number) {
+    this.options.passwordCb(cb, reason == PasswordResponses.INCORRECT_PASSWORD);
+  }
+
+  async open(blob: Blob, options: EbookBackendOptions) {
+    this.blobUrl = URL.createObjectURL(blob);
+    this.options = options;
+
+    const task = getDocument(this.blobUrl);
+    task.onPassword = this.onPassword;
     this.doc = await task.promise;
-    this.length = this.doc.numPages;
     this.observer = new IntersectionObserver((entries) => this.onIntersection(entries), {
       threshold: [0, 0.5],
     });
+
     await this.setup();
-    this.progressCb = progressCb;
-    this.scaleCb = scaleCb;
   }
 
   async close() {
     this.observer.disconnect();
-    this.container.replaceChildren();
+    this.options.container.replaceChildren();
     this.visiblePages.clear();
     this.tasks.clear();
     this.pages = [];
     this.dummyPages = [];
     await this.doc.destroy();
+    URL.revokeObjectURL(this.blobUrl);
   }
 
   async getName(): Promise<string> {
@@ -301,10 +298,6 @@ export class PdfJs extends EbookBackend {
     return blob;
   }
 
-  async getLength(): Promise<number> {
-    return this.length;
-  }
-
   async getOutlines(): Promise<Outline[]> {
     const rawOutline = await this.doc.getOutline();
     if (!rawOutline) return [];
@@ -312,31 +305,34 @@ export class PdfJs extends EbookBackend {
     return outlines;
   }
 
-  async setPosition(position: number): Promise<void> {
-    debug(`Changing to position: ${position}`);
-    this.position = position;
+  async setPosition(position: EbookPosition): Promise<void> {
+    debug(f`Changing to position: ${position}`);
+
+    const pageNumber = Number(position.id);
+    if (isNaN(pageNumber)) throw new TypeError(`Invalid position.id: ${position.id}`);
 
     for (const page of this.pages)
-      if (page.position == this.position) {
+      if (page.pageNumber == pageNumber) {
         page.scrollIntoView();
-        break;
+        return;
       }
+
+    throw new TypeError(f`Invalid position: ${position}`);
   }
 
-  async getPages(): Promise<EbookPageView[]> {
+  async getPages(): Promise<EbookPosition[]> {
     const pages = [];
     for (let i = 1; i <= this.doc.numPages; i++) {
-      const proxy = await this.doc.getPage(i);
-      const viewport = proxy.getViewport({ scale: 1 });
-      pages.push({ position: i, height: viewport.height * DPR, width: viewport.width * DPR });
+      pages.push({ id: i.toString(), name: i.toString(), x: 0, y: 0 });
     }
     return pages;
   }
 
-  async setLayout(layout: PageLayout): Promise<void> {
+  async setLayout(layout: EbookLayout): Promise<void> {
     debug(`Changing to layout: ${layout}`);
+
     this.layout = layout;
-    this.container.replaceChildren();
+    this.options.container.replaceChildren();
     this.dummyPages.map((page) => page.remove());
 
     const totalSpreads = spreads(this.layout, this.pages.length);
@@ -347,8 +343,8 @@ export class PdfJs extends EbookBackend {
       div.style.flexDirection = "row";
       div.style.marginLeft = "auto";
       div.style.marginRight = "auto";
-      div.style.gap = `${this.gap}px`;
-      this.container.appendChild(div);
+      div.style.gap = `${this.options.gap}px`;
+      this.options.container.appendChild(div);
       for (const position of spreadToPages(this.layout, spread)) {
         const { dummy, page: realPage } = dummyOrPage(this.pages, position);
         let page;
@@ -367,13 +363,14 @@ export class PdfJs extends EbookBackend {
 
   async setScale(scale: number): Promise<void> {
     debug(`Changing to scale: ${scale}`);
+
     this.scale = scale;
-    const position = this.position;
+    const position = { id: this.pageNumber.toString(), name: "", x: 0, y: 0 };
 
     for (const page of this.pages) {
       page.setScale(this.scale);
-      if (this.visiblePages.has(page.position)) {
-        debug(`Re-rendering ${page.position} at ${this.scale} scale`);
+      if (this.visiblePages.has(page.pageNumber)) {
+        debug(`Re-rendering ${page.pageNumber} at ${this.scale} scale`);
         await this.queueRender(page);
       }
     }
@@ -383,7 +380,7 @@ export class PdfJs extends EbookBackend {
     }
 
     await this.setPosition(position);
-    this.scaleCb(this.scale);
+    this.options.scaleCb(this.scale);
   }
 
   async scaleToFitHeight() {
@@ -421,7 +418,7 @@ export class PdfJs extends EbookBackend {
       width += this.pages[start - 1].width;
     }
 
-    if (this.layout != PageLayout.SINGLE) width += this.gap;
+    if (this.layout != EbookLayout.SINGLE) width += this.gap;
 
     const scale = this.container.clientWidth / width;
     await this.setScale(scale);
@@ -448,7 +445,7 @@ export class PdfJs extends EbookBackend {
       width += this.pages[start - 1].width;
     }
 
-    if (this.layout != PageLayout.SINGLE) width += this.gap;
+    if (this.layout != EbookLayout.SINGLE) width += this.gap;
 
     const scale = Math.min(
       this.container.clientWidth / width,
@@ -457,10 +454,9 @@ export class PdfJs extends EbookBackend {
     await this.setScale(scale);
   }
 
-  async setColors(white: number, black: number): Promise<void> {
-    debug(`Changing to colors: ${white}, ${black}`);
-    this.white = white;
-    this.black = black;
+  async setColor(color: EbookColor): Promise<void> {
+    debug(f`Changing to color: ${color}`);
+    this.color = color;
   }
 
   async setRotation(rotation: number): Promise<void> {

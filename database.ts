@@ -207,7 +207,7 @@ export class Database {
     const items: Item[] = await this.getAll("items", parentId);
     return items
       .filter((item) => type == null || item.type == type)
-      .sort((a, b) => a.position - b.position);
+      .sort((a, b) => a.order - b.order);
   }
 
   async putItem(item: Item): Promise<Item> {

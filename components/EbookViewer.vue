@@ -7,8 +7,8 @@
       <button class="btn btn-ghost">
         <BookmarkIcon class="size-4" />
       </button>
-      <EbookPageNumberButton
-        ref="pageNumberButton"
+      <EbookPositionButton
+        ref="positionButton"
         :pages="pages"
         :position="ebook.position"
         @change="onPositionChange"
@@ -86,9 +86,9 @@
                         {{ $t("Single") }}
                       </span>
                       <input
-                        v-model="layout"
+                        v-model="ebook.layout"
                         type="radio"
-                        :value="PageLayout.SINGLE"
+                        :value="EbookLayout.SINGLE"
                         @change="onLayoutChange"
                       />
                     </label>
@@ -99,9 +99,9 @@
                         {{ $t("Dual start") }}
                       </span>
                       <input
-                        v-model="layout"
+                        v-model="ebook.layout"
                         type="radio"
-                        :value="PageLayout.DUAL_START"
+                        :value="EbookLayout.DUAL_START"
                         @change="onLayoutChange"
                       />
                     </label>
@@ -112,9 +112,9 @@
                         {{ $t("Dual end") }}
                       </span>
                       <input
-                        v-model="layout"
+                        v-model="ebook.layout"
                         type="radio"
-                        :value="PageLayout.DUAL_END"
+                        :value="EbookLayout.DUAL_END"
                         @change="onLayoutChange"
                       />
                     </label>
@@ -181,7 +181,7 @@
 <script setup lang="ts">
 import { useDatabase } from "@/database";
 import { useEbookBackend } from "@/backends";
-import { PageLayout, Ebook } from "@/models";
+import { EbookLayout, Ebook } from "@/models";
 import { useLogger } from "@/logging";
 import { Outline } from "@/backends/outline";
 import { useStorage } from "@/storages";
@@ -203,8 +203,7 @@ let backend = null;
 let database = null;
 let storage = null;
 
-const layout = ref(PageLayout.SINGLE);
-const pageNumberButton = useTemplateRef("pageNumberButton");
+const positionButton = useTemplateRef("positionButton");
 const container = useTemplateRef("container");
 
 const pages = ref([]);
@@ -218,24 +217,28 @@ async function open(item: Ebook) {
 
   const blob = await storage.readFile(item.file);
   backend = new ctor();
-  await backend.open(blob, container.value, PAGE_GAP, onPositionChanged, onScaleChanged);
+  await backend.open(blob, {
+    container: container.value,
+    gap: PAGE_GAP,
+    positionCb: onPositionChanged,
+    scaleCb: onScaleChanged,
+  });
 
-  ebook.value.length = await backend.getLength();
   pages.value = await backend.getPages();
 
-  layout.value = ebook.value.layout;
-  await backend.setLayout(ebook.value.layout);
-
-  await backend.setPosition(ebook.value.position);
-
   if (ebook.value.openingFirstTime) {
+    ebook.value.layout = EbookLayout.DUAL_END;
+    ebook.value.position = pages.value[0];
     await backend.scaleToFitPage();
     ebook.value.openingFirstTime = false;
   } else {
     await backend.setScale(ebook.value.scale);
   }
 
-  pageNumberButton.value.open(backend);
+  await onLayoutChange(ebook.value.layout);
+  await onPositionChange(ebook.value.position);
+
+  positionButton.value.open(backend);
 
   emit("metadata", await backend.getName(), await backend.getAuthors(), await backend.getCover());
   emit("outlines", await backend.getOutlines());
@@ -248,7 +251,7 @@ async function close() {
 
   pages.value = [];
 
-  if (pageNumberButton.value) pageNumberButton.value.close();
+  if (positionButton.value) positionButton.value.close();
 
   await backend.close();
   backend = null;
@@ -275,7 +278,7 @@ async function onScaleChanged(scale) {
 }
 
 async function onPositionChange(position) {
-  debug(`Changing to position: ${position}`);
+  debug(f`Changing to position: ${position}`);
   await backend.setPosition(position);
 }
 
@@ -300,8 +303,7 @@ async function onScaleToFitPage() {
 }
 
 async function onLayoutChange() {
-  debug(`Changing to layout: ${layout.value}`);
-  await backend.setLayout(layout.value);
-  ebook.value.layout = layout.value;
+  debug(`Changing to layout: ${ebook.value.layout}`);
+  await backend.setLayout(ebook.value.layout);
 }
 </script>

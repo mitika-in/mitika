@@ -12,6 +12,7 @@ export interface EbookBackendOptions extends BackendOptions {
 export abstract class EbookBackend extends Backend {
   abstract override open(blob: Blob, options: EbookBackendOptions): Promise<void>;
   abstract getPages(): Promise<EbookPosition[]>;
+  abstract getThumbnail(position: EbookPosition): Promise<Blob | null>;
   abstract setColor(color: EbookColor): Promise<void>;
   abstract setLayout(layout: EbookLayout): Promise<void>;
   abstract setRotation(rotation: number): Promise<void>;

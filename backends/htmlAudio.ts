@@ -14,8 +14,12 @@ export class HtmlAudio extends AudiobookBackend {
   }
 
   onTimeUpdate() {
-    const position = { id: this.audio.currentTime };
+    const position = { value: this.audio.currentTime };
     this.options.positionCb(position);
+  }
+
+  onEnded() {
+    this.options.endedCb();
   }
 
   async open(blob: Blob, options: AudiobookBackendOptions) {
@@ -23,6 +27,7 @@ export class HtmlAudio extends AudiobookBackend {
     this.options = options;
     this.audio.addEventListener("error", () => this.onError());
     this.audio.addEventListener("timeupdate", () => this.onTimeUpdate());
+    this.audio.addEventListener("ended", () => this.onEnded());
   }
 
   async close() {
@@ -56,7 +61,7 @@ export class HtmlAudio extends AudiobookBackend {
   }
 
   async setPosition(position: AudiobookPosition) {
-    this.audio.currentTime = position.id;
+    this.audio.currentTime = position.value;
   }
 
   async play() {
@@ -68,10 +73,12 @@ export class HtmlAudio extends AudiobookBackend {
   }
 
   async setRate(rate: number) {
+    debug(`Changing to rate: ${rate}`);
     this.audio.playbackRate = rate;
   }
 
   async setVolume(volume: number) {
+    debug(`Changing to volume: ${volume}`);
     this.audio.volume = volume;
   }
 }

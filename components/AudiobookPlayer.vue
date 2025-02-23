@@ -4,14 +4,14 @@
     class="flex flex-col gap-4"
   >
     <div class="flex flex-row gap-4 items-center">
-      <span>{{ formatTime(audiobook.position, hoursLength) }}</span>
+      <span>{{ formatTime(audiobook.position.value, hoursLength) }}</span>
       <input
         class="range"
         :max="audiobook.length"
         min="0"
         step="1"
         type="range"
-        :value="audiobook.position"
+        :value="audiobook.position.value"
         @change="onPositionChange"
       />
       <span>
@@ -98,12 +98,16 @@ async function open(item: Audiobook) {
 
   const blob = await storage.readFile(item.file);
   backend = new ctor();
-  await backend.open(blob, onPositionChanged, onEnd);
+  await backend.open(blob, { positionCb: onPositionChanged, endedCb: onEnd });
 
   audiobook.value.length = await backend.getLength();
   hoursLength.value = Math.floor(Math.log10(audiobook.value.length / 3600) + 1);
 
-  await backend.setPosition(audiobook.value.position);
+  if (audiobook.value.openingFirstTime) audiobook.value.openingFirstTime = false;
+  else await backend.setPosition(audiobook.value.position);
+
+  await onRateChange(audiobook.value.rate);
+  await onVolumeChange(audiobook.value.volume);
 
   emit("metadata", await backend.getName(), await backend.getAuthors(), await backend.getCover());
   emit("outlines", await backend.getOutlines());
@@ -140,12 +144,12 @@ async function onEnd() {
   debug(`Playback ended`);
   playing.value = false;
   await backend.pause();
-  await backend.seek(0);
+  await backend.setPosition({ value: 0 });
 }
 
 async function onPositionChange(event) {
-  debug(`Changing to position: ${event.target.value}`);
-  await backend.setPosition(event.target.value);
+  debug(`Changing to position.value: ${event.target.value}`);
+  await backend.setPosition({ value: event.target.value });
 }
 
 async function onRateChange(rate: number) {
@@ -171,8 +175,8 @@ async function onVolumeChange(volume: number) {
   audiobook.value.volume = volume;
 }
 
-function formatTime(position: number, hoursLength: number): string {
-  let delta = position;
+function formatTime(value: number, hoursLength: number): string {
+  let delta = value;
   const hours = Math.floor(delta / 3600);
   delta = delta % 3600;
   const minutes = Math.floor(delta / 60);

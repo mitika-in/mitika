@@ -2,30 +2,31 @@
   <button class="flex flex-col gap-2 p-2 btn btn-ghost h-auto">
     <img
       ref="element"
-      class="skeleton rounded-none"
-      :style="`height: ${page.height * scale}px; width: ${page.width * scale}px`"
+      :class="{ skeletion: loading }"
+      class="rounded-none object-scale-down w-32 h-32"
     />
     <span>
-      {{ page.position }}
+      {{ name }}
     </span>
   </button>
 </template>
 <script setup lang="ts">
-import { EbookPageView } from "@/backends";
+import { Constants } from "@/constants";
 
 interface Props {
-  page: EbookPageView;
-  scale: number;
+  name: string;
 }
 
 defineProps<Props>();
 
+const loading = ref(true);
 const element = useTemplateRef("element");
 
 function setThumbnail(blob) {
-  URL.revokeObjectURL(element.value.src);
+  if (element.value.src) URL.revokeObjectURL(element.value.src);
 
   element.value.src = URL.createObjectURL(blob);
+  loading.value = false;
 }
 
 defineExpose({ element, setThumbnail });

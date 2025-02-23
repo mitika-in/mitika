@@ -128,7 +128,7 @@
         v-if="filteredBooks.length == 0"
         :action="$t('Open New Book')"
         class="h-full"
-        :description="$t('Add a few books to open them in here.')"
+        :description="$t('Add a few books to open them here.')"
         :title="books.length == 0 ? $t('Library is empty') : $t('No such book')"
         type="info"
         @click="openNewBook"
@@ -285,4 +285,7 @@ async function removeBook(book: Book) {
 
 await refreshBooks();
 selectedTags.value = [...allTags.value];
+
+const u = ref({ x: 10, y: 100 });
+const v = ref({ x: 10, y: { z: 10 } });
 </script>

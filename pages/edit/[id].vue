@@ -147,7 +147,7 @@ async function save() {
 
   for (let i = 0; i < newList.length; i++) {
     const item = newList[i];
-    item.position = i;
+    item.order = i;
     item.parentId = book.value.id;
   }
 

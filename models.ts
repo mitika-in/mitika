@@ -54,6 +54,7 @@ export interface Item {
   id: string;
   type: ItemType;
   parentId: string;
+  order: number;
   name: string;
   file: File;
   position: Position;
@@ -61,7 +62,7 @@ export interface Item {
 }
 
 export interface AudiobookPosition extends Position {
-  id: number;
+  value: number;
 }
 
 export interface Audiobook extends Item {
@@ -79,7 +80,7 @@ export function createAudiobook(parentId: string, name: string, file: File): Aud
     name,
     file,
     length: 1,
-    position: { id: 0 },
+    position: { value: 0 },
     openingFirstTime: true,
     volume: 1,
     rate: 1,

@@ -60,17 +60,17 @@ function computeVisibleRatio(pTop: number, pBottom: number, cTop: number, cBotto
   return 1;
 }
 
-function spreads(layout: EbookLayout, length: number): number {
+function lengthToRows(length: number, layout: EbookLayout): number {
   if (layout == EbookLayout.SINGLE) return length;
   else if (layout == EbookLayout.DUAL_START) return Math.ceil(length / 2);
   else if (layout == EbookLayout.DUAL_END) return Math.ceil((length + 1) / 2);
   else throw new TypeError(`Unknown layout: ${layout}`);
 }
 
-function spreadToPages(layout: EbookLayout, spread: number): number[] {
-  if (layout == EbookLayout.SINGLE) return [spread];
-  else if (layout == EbookLayout.DUAL_START) return [2 * spread - 1, 2 * spread];
-  else if (layout == EbookLayout.DUAL_END) return [2 * (spread - 1), 2 * spread - 1];
+function rowToPageNumbers(row: number, layout: EbookLayout): number[] {
+  if (layout == EbookLayout.SINGLE) return [row];
+  else if (layout == EbookLayout.DUAL_START) return [2 * row - 1, 2 * row];
+  else if (layout == EbookLayout.DUAL_END) return [2 * (row - 1), 2 * row - 1];
   else throw new TypeError(`Unknown layout: ${layout}`);
 }
 
@@ -80,31 +80,31 @@ function dummyOrPage(pages: PageDiv[], pageNumber: number): { dummy: boolean; pa
   else return { dummy: false, page: pages[pageNumber - 1] };
 }
 
-function getSpreadForPosition(
-  position: number,
+function pageNumberToPageNumbers(
+  pageNumber: number,
   length: number,
   layout: EbookLayout,
-): [start: number, end: number] {
+): number[] {
   let start = 0;
   let end = 0;
 
   if (layout == EbookLayout.SINGLE) {
-    start = position;
+    start = pageNumber;
   } else if (layout == EbookLayout.DUAL_START) {
-    if (position % 2 == 1) {
-      start = position;
-      end = position + 1;
+    if (pageNumber % 2 == 1) {
+      start = pageNumber;
+      end = pageNumber + 1;
     } else {
-      start = position - 1;
-      end = position;
+      start = pageNumber - 1;
+      end = pageNumber;
     }
   } else if (layout == EbookLayout.DUAL_END) {
-    if (position % 2 == 1) {
-      start = position - 1;
-      end = position;
+    if (pageNumber % 2 == 1) {
+      start = pageNumber - 1;
+      end = pageNumber;
     } else {
-      start = position;
-      end = position + 1;
+      start = pageNumber;
+      end = pageNumber + 1;
     }
   } else {
     throw new TypeError(`Unknown layout: ${layout}`);
@@ -142,6 +142,8 @@ export class PdfJs extends EbookBackend {
   private visiblePages = new Set<number>();
   private observer!: IntersectionObserver;
 
+  private onSetup = true;
+
   private updatePosition() {
     let pageNumber = this.pageNumber;
     let maxRatio = 0;
@@ -174,7 +176,6 @@ export class PdfJs extends EbookBackend {
     options: RenderingOptions,
   ) {
     debug(`Rendering page: ${pageNumber}`);
-
     if (this.tasks.has(context)) {
       debug(`Canceling existing rendering task for page: ${pageNumber}`);
       const task = this.tasks.get(context);
@@ -226,7 +227,7 @@ export class PdfJs extends EbookBackend {
       }
     }
 
-    this.updatePosition();
+    if (!this.onSetup) this.updatePosition();
   }
 
   private async setup() {
@@ -234,7 +235,7 @@ export class PdfJs extends EbookBackend {
     container.style.display = "flex";
     container.style.flexDirection = "column";
     container.style.flexGrow = "1";
-    container.style.gap = "16px";
+    container.style.gap = `${this.options.gap}px`;
     container.style.height = "0px";
     container.style.overflow = "scroll";
 
@@ -256,22 +257,25 @@ export class PdfJs extends EbookBackend {
     this.options = options;
 
     const task = getDocument(this.blobUrl);
-    task.onPassword = this.onPassword;
+    task.onPassword = (cb: (passowrd: string) => void, reason: number) =>
+      this.onPassword(cb, reason);
     this.doc = await task.promise;
     this.observer = new IntersectionObserver((entries) => this.onIntersection(entries), {
       threshold: [0, 0.5],
     });
 
     await this.setup();
+    this.onSetup = false;
+    await this.setLayout(this.layout);
   }
 
   async close() {
     this.observer.disconnect();
     this.options.container.replaceChildren();
     this.visiblePages.clear();
-    this.tasks.clear();
     this.pages = [];
     this.dummyPages = [];
+    this.tasks.clear();
     await this.doc.destroy();
     URL.revokeObjectURL(this.blobUrl);
   }
@@ -284,18 +288,10 @@ export class PdfJs extends EbookBackend {
     return [];
   }
 
-  async getCover(): Promise<Blob> {
-    const proxy = await this.doc.getPage(1);
-    const viewport = proxy.getViewport({ scale: 1 });
-
-    const canvas = new OffscreenCanvas(viewport.width, viewport.height);
-    const context = canvas.getContext("2d");
-    if (context == null) throw new TypeError("Unable to get context for cover");
-
-    await this.renderPage(1, context, { scale: 1 });
-    const blob = canvas.convertToBlob({ type: "image/png" });
-
-    return blob;
+  async getCover(): Promise<Blob | null> {
+    const position = { id: "1", name: "1", x: 0, y: 0 };
+    const cover = await this.getThumbnail(position);
+    return cover;
   }
 
   async getOutlines(): Promise<Outline[]> {
@@ -305,12 +301,15 @@ export class PdfJs extends EbookBackend {
     return outlines;
   }
 
+  private resolvePosition(position: EbookPosition): [pageNumber: number, x: number, y: number] {
+    const pageNumber = position.id.length != 0 ? Number(position.id) : 1;
+    if (isNaN(pageNumber)) throw new TypeError(`Invalid position.id: ${position.id}`);
+    return [pageNumber, position.x, position.y];
+  }
+
   async setPosition(position: EbookPosition): Promise<void> {
     debug(f`Changing to position: ${position}`);
-
-    const pageNumber = Number(position.id);
-    if (isNaN(pageNumber)) throw new TypeError(`Invalid position.id: ${position.id}`);
-
+    const [pageNumber] = this.resolvePosition(position);
     for (const page of this.pages)
       if (page.pageNumber == pageNumber) {
         page.scrollIntoView();
@@ -328,15 +327,31 @@ export class PdfJs extends EbookBackend {
     return pages;
   }
 
+  async getThumbnail(position: EbookPosition): Promise<Blob | null> {
+    debug(f`Generating thumbnail for position: ${position}`);
+    const [pageNumber] = this.resolvePosition(position);
+
+    const proxy = await this.doc.getPage(pageNumber);
+    const viewport = proxy.getViewport({ scale: 1 });
+
+    const canvas = new OffscreenCanvas(viewport.width * DPR, viewport.height * DPR);
+    const context = canvas.getContext("2d");
+    if (context == null) throw new TypeError("Unable to get context for cover");
+
+    await this.renderPage(pageNumber, context, { scale: 1 });
+    const blob = canvas.convertToBlob({ type: "image/png" });
+
+    return blob;
+  }
+
   async setLayout(layout: EbookLayout): Promise<void> {
     debug(`Changing to layout: ${layout}`);
-
     this.layout = layout;
     this.options.container.replaceChildren();
     this.dummyPages.map((page) => page.remove());
 
-    const totalSpreads = spreads(this.layout, this.pages.length);
-    for (let spread = 1; spread <= totalSpreads; spread++) {
+    const rows = lengthToRows(this.pages.length, this.layout);
+    for (let row = 1; row <= rows; row++) {
       const div = document.createElement("div");
       div.classList.add("flex", "flex-row", "mx-auto");
       div.style.display = "flex";
@@ -345,8 +360,8 @@ export class PdfJs extends EbookBackend {
       div.style.marginRight = "auto";
       div.style.gap = `${this.options.gap}px`;
       this.options.container.appendChild(div);
-      for (const position of spreadToPages(this.layout, spread)) {
-        const { dummy, page: realPage } = dummyOrPage(this.pages, position);
+      for (const pageNumber of rowToPageNumbers(row, this.layout)) {
+        const { dummy, page: realPage } = dummyOrPage(this.pages, pageNumber);
         let page;
         if (dummy) {
           page = realPage.createDummy();
@@ -363,7 +378,6 @@ export class PdfJs extends EbookBackend {
 
   async setScale(scale: number): Promise<void> {
     debug(`Changing to scale: ${scale}`);
-
     this.scale = scale;
     const position = { id: this.pageNumber.toString(), name: "", x: 0, y: 0 };
 
@@ -385,71 +399,50 @@ export class PdfJs extends EbookBackend {
 
   async scaleToFitHeight() {
     debug(`Changing scale to fit height`);
-    const [start, end] = getSpreadForPosition(this.position, this.length, this.layout);
+    const pageNumbers = pageNumberToPageNumbers(this.pageNumber, this.pages.length, this.layout);
 
     let height = 0;
+    for (const pageNumber of pageNumbers)
+      if (pageNumber != 0) height = Math.max(this.pages[pageNumber - 1].height, height);
 
-    if (start != 0) {
-      height = Math.max(this.pages[start - 1].height, height);
-    }
-    if (end != 0) {
-      height = Math.max(this.pages[end - 1].height, height);
-    }
+    const scale = this.options.container.clientHeight / height;
 
-    const scale = this.container.clientHeight / height;
     await this.setScale(scale);
   }
 
   async scaleToFitWidth() {
     debug(`Changing scale to fit width`);
-    const [start, end] = getSpreadForPosition(this.position, this.length, this.layout);
+    const pageNumbers = pageNumberToPageNumbers(this.pageNumber, this.pages.length, this.layout);
 
     let width = 0;
+    for (const pageNumber of pageNumbers)
+      if (pageNumber != 0) width += this.pages[pageNumber - 1].width;
 
-    if (start != 0) {
-      width += this.pages[start - 1].width;
-    } else {
-      width += this.pages[end - 1].width;
-    }
+    if (this.layout != EbookLayout.SINGLE) width += this.options.gap;
 
-    if (end != 0) {
-      width += this.pages[end - 1].width;
-    } else {
-      width += this.pages[start - 1].width;
-    }
+    const scale = this.options.container.clientWidth / width;
 
-    if (this.layout != EbookLayout.SINGLE) width += this.gap;
-
-    const scale = this.container.clientWidth / width;
     await this.setScale(scale);
   }
 
   async scaleToFitPage() {
     debug(`Changing scale to fit page`);
-    const [start, end] = getSpreadForPosition(this.position, this.length, this.layout);
+    const pageNumbers = pageNumberToPageNumbers(this.pageNumber, this.pages.length, this.layout);
 
     let height = 0;
     let width = 0;
-
-    if (start != 0) {
-      height = Math.max(this.pages[start - 1].height, height);
-      width += this.pages[start - 1].width;
-    } else {
-      width += this.pages[end - 1].width;
+    for (const pageNumber of pageNumbers) {
+      if (pageNumber != 0) {
+        height = Math.max(this.pages[pageNumber - 1].height, height);
+        width += this.pages[pageNumber - 1].width;
+      }
     }
 
-    if (end != 0) {
-      height = Math.max(this.pages[end - 1].height, height);
-      width += this.pages[end - 1].width;
-    } else {
-      width += this.pages[start - 1].width;
-    }
-
-    if (this.layout != EbookLayout.SINGLE) width += this.gap;
+    if (this.layout != EbookLayout.SINGLE) width += this.options.gap;
 
     const scale = Math.min(
-      this.container.clientWidth / width,
-      this.container.clientHeight / height,
+      this.options.container.clientWidth / width,
+      this.options.container.clientHeight / height,
     );
     await this.setScale(scale);
   }

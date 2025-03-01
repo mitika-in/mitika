@@ -1,12 +1,14 @@
 // https://nuxt.com/docs/api/configuration/nuxt-config
+import tailwindcss from "@tailwindcss/vite";
+
 export default defineNuxtConfig({
   compatibilityDate: "2024-04-03",
   components: {
     dirs: [{ path: "~/components/icons", pathPrefix: false }, "~/components"],
   },
+  css: ["~/assets/css/style.css"],
   ssr: false,
   devtools: { enabled: true },
-  modules: ["@nuxtjs/tailwindcss", "@nuxtjs/i18n"],
   i18n: {
     locales: [
       {
@@ -17,5 +19,8 @@ export default defineNuxtConfig({
     lazy: true,
     defaultLocale: "en",
   },
-  tailwindcss: { disableHMR: true },
+  modules: ["@nuxtjs/i18n"],
+  vite: {
+    plugins: [tailwindcss()],
+  },
 });

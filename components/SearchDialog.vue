@@ -6,7 +6,7 @@
     <div class="modal-box">
       <div class="flex flex-row gap-2 items-center">
         <input
-          class="input input-bordered grow"
+          class="input grow"
           placeholder="Go to page number"
         />
         <div class="modal-action m-0">

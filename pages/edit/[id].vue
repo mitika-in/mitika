@@ -16,65 +16,52 @@
       </button>
     </header>
     <main class="flex flex-col gap-4 w-full lg:w-1/2">
-      <div class="flex flex-col gap-4">
-        <label class="form-control w-full">
-          <div class="label">
-            <span class="label-text">
-              {{ $t("Name") }}
-            </span>
-          </div>
-          <input
-            v-model.trim="name"
-            class="input input-bordered w-full"
-            :placeholder="$t('Name of the book')"
-            type="text"
+      <fieldset class="fieldset">
+        <label class="fieldset-label">
+          {{ $t("Name") }}
+        </label>
+        <input
+          v-model.trim="name"
+          class="input w-full"
+          :placeholder="$t('Name of the book')"
+          type="text"
+        />
+        <label class="fieldset-label">
+          {{ $t("Authors") }}
+        </label>
+        <input
+          v-model.trim="authors"
+          class="input w-full"
+          :placeholder="$t('Authors of the book')"
+          type="text"
+        />
+        <label class="fieldset-label">
+          {{ $t("Tags") }}
+        </label>
+        <div class="flex flex-row gap-2 flex-wrap items-center">
+          <Tag
+            v-for="tag in tags"
+            :key="tag"
+            :removable="true"
+            :text="tag"
+            @remove="removeTag(tag)"
           />
-        </label>
-        <label class="form-control w-full">
-          <div class="label">
-            <span class="label-text">
-              {{ $t("Authors") }}
-            </span>
-          </div>
           <input
-            v-model.trim="authors"
-            class="input input-bordered w-full"
-            :placeholder="$t('Authors of the book')"
+            v-model.trim="editingTag"
+            class="input grow"
+            :placeholder="tags.length == 0 ? $t('Tags describing the book') : $t('… more tags')"
             type="text"
+            @keyup.delete="editLastTag"
+            @keyup.enter="addTag"
+            @keyup.space="addTag"
           />
-        </label>
-        <label class="form-control w-full">
-          <div class="label">
-            <span class="label-text">
-              {{ $t("Tags") }}
-            </span>
-          </div>
-          <div class="input input-bordered w-full flex flex-row items-center overflow-scroll">
-            <Tag
-              v-for="tag in tags"
-              :key="tag"
-              :removable="true"
-              :text="tag"
-              @remove="removeTag(tag)"
-            />
-            <input
-              v-model.trim="editingTag"
-              :placeholder="tags.length == 0 ? $t('Tags describing the book') : $t('… more tags')"
-              type="text"
-              @keyup.delete="editLastTag"
-              @keyup.enter="addTag"
-              @keyup.space="addTag"
-            />
-          </div>
-        </label>
-      </div>
-      <div class="divider" />
+        </div>
+      </fieldset>
       <EditSection
         :items="newAudiobooks"
         :name="$t('Audiobooks')"
         :type="ItemType.AUDIOBOOK"
       />
-      <div class="divider" />
       <EditSection
         :items="newEbooks"
         :name="$t('Ebooks')"
@@ -156,7 +143,10 @@ async function save() {
   await database.updateItems(book.value.id, newItems, oldItems, delItems);
 
   book.value.name = name.value || (newItems.length != 0 ? newItems[0].name : oldItems[0].name);
-  book.value.authors = authors.value.split(",").map((author) => author.trim());
+  book.value.authors = authors.value
+    .split(",")
+    .map((author) => author.trim())
+    .filter((author) => author.length != 0);
   book.value.tags = tags.value;
   await database.putBook(toRaw(book.value));
 

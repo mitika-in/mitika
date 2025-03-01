@@ -1,15 +1,11 @@
 <template>
-  <Dropdown
-    :alignEnd="false"
-    :ghostBtn="false"
-    :alignTop="true"
-  >
+  <Dropdown :ghostBtn="false">
     <template #button>
       {{ `${prettyRate}x` }}
     </template>
     <template #content>
-      <div class="flex flex-col gap-2 bg-base-200 rounded-box w-64 p-2 shadow">
-        <ul class="menu">
+      <div class="flex flex-col gap-2 p-2 bg-base-100 rounded-box w-64 shadow-sm">
+        <ul class="menu w-full">
           <li>
             <button @click="emitChange(0.25)">
               {{ $t("0.25x") }}
@@ -38,19 +34,19 @@
         </ul>
         <div class="join w-full">
           <button
-            class="join-item btn btn-outline border-neutral"
+            class="join-item btn"
             :disabled="rate <= MIN"
             @click="emitChange(rate - STEP)"
           >
             <MinusIcon class="size-4" />
           </button>
           <input
-            class="join-item input input-bordered border-neutral grow w-[4rem]"
+            class="join-item input grow w-[4rem]"
             :value="prettyRate"
             @change="onChange"
           />
           <button
-            class="join-item btn btn-outline border-neutral"
+            class="join-item btn"
             :disabled="rate >= MAX"
             @click="emitChange(rate + STEP)"
           >

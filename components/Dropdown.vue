@@ -1,27 +1,27 @@
 <template>
+  <button
+    class="btn"
+    :class="{ 'btn-ghost': ghostBtn }"
+    :popovertarget="`popover-${id}`"
+    :style="`anchor-name:--anchor-${id}`"
+  >
+    <slot name="button"></slot>
+  </button>
   <div
     class="dropdown"
-    :class="{ 'dropdown-end': alignEnd, 'dropdown-top': alignTop }"
+    :id="`popover-${id}`"
+    popover
+    :style="`position-anchor:--anchor-${id}`"
   >
-    <div
-      class="btn"
-      :class="{ 'btn-ghost': ghostBtn }"
-      role="button"
-      tabindex="0"
-    >
-      <slot name="button"></slot>
-    </div>
-    <div class="z-10 m-2 dropdown-content">
-      <slot name="content"></slot>
-    </div>
+    <slot name="content"></slot>
   </div>
 </template>
 <script setup lang="ts">
 interface Props {
   ghostBtn?: boolean;
-  alignEnd?: boolean;
-  alignTop?: boolean;
 }
 
-const { ghostBtn = true, alignEnd = true, alignTop = false } = defineProps<Props>();
+const { ghostBtn = true } = defineProps<Props>();
+
+const id = Math.ceil(Math.random() * 100).toString();
 </script>

@@ -4,8 +4,8 @@
       {{ `${prettyScale}%` }}
     </template>
     <template #content>
-      <div class="flex flex-col gap-2 bg-base-200 rounded-box w-64 p-2 shadow">
-        <ul class="menu">
+      <div class="flex flex-col gap-2 p-2 rounded-box w-64 bg-base-100 shadow-sm">
+        <ul class="menu w-full">
           <li>
             <button @click="$emit('change', 1)">
               {{ $t("Original") }}
@@ -29,19 +29,19 @@
         </ul>
         <div class="join w-full">
           <button
-            class="join-item btn btn-outline border-neutral"
+            class="join-item btn"
             :disabled="scale <= MIN"
             @click="emitChange(scale - STEP)"
           >
             <MinusIcon class="size-4" />
           </button>
           <input
-            class="join-item input input-bordered border-neutral grow w-[4rem]"
+            class="join-item input grow w-[4rem]"
             :value="prettyScale"
             @change="onChange"
           />
           <button
-            class="join-item btn btn-outline border-neutral"
+            class="join-item btn"
             :disabled="scale >= MAX"
             @click="emitChange(scale + STEP)"
           >

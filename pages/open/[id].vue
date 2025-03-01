@@ -23,10 +23,7 @@
             <MenuIcon class="size-4" />
           </template>
           <template #content>
-            <ul
-              class="menu bg-base-200 rounded-box w-64 shadow"
-              tabindex="0"
-            >
+            <ul class="menu rounded-box bg-base-100 w-64 shadow-sm">
               <li>
                 <button @click="onEdit">
                   {{ $t("Edit") }}

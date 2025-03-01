@@ -1,23 +1,23 @@
 <template>
-  <li class="flex flex-row gap-2 p-2 bg-base-200 shadow items-center">
+  <li class="list-row">
     <template v-if="!editing">
       <div class="join join-horizontal">
         <button
           class="join-item btn btn-ghost"
-          :disabled="position == Position.SINGLE || position == Position.TOP"
+          :disabled="position == 0"
           @click="$emit('moveUp')"
         >
           <ChevronUpIcon class="size-4" />
         </button>
         <button
           class="join-item btn btn-ghost"
-          :disabled="position == Position.SINGLE || position == Position.BOTTOM"
+          :disabled="position == length - 1"
           @click="$emit('moveDown')"
         >
           <ChevronDownIcon class="size-4" />
         </button>
       </div>
-      <div class="w-0 grow flex flex-row gap-2">
+      <div class="flex flex-row gap-2 items-center w-128">
         <span class="truncate">
           {{ item.name }}
         </span>
@@ -41,7 +41,7 @@
     <template v-else>
       <input
         v-model.trim="name"
-        class="input input-bordered grow"
+        class="input w-full list-col-grow"
         @keyup.enter="saveEdit"
         @keyup.esc="cancelEdit"
       />
@@ -64,15 +64,9 @@
 <script lang="ts" setup>
 import { Item } from "@/models";
 
-enum Position {
-  TOP = "top",
-  MIDDLE = "middle",
-  BOTTOM = "bottom",
-  SINGLE = "single",
-}
-
 interface Props {
-  position: Position;
+  position: number;
+  length: number;
   item: Item;
 }
 

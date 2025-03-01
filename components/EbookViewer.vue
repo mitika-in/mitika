@@ -30,14 +30,122 @@
           <MoreVerticalIcon class="size-4" />
         </template>
         <template #content>
-          <ul
-            class="menu bg-base-200 rounded-box w-64 shadow"
-            tabindex="0"
-          >
+          <ul class="menu bg-base-100 rounded-box w-64 shadow-sm">
             <li>
-              <button>
-                {{ $t("Search") }}
-              </button>
+              <details>
+                <summary>
+                  {{ $t("Colors") }}
+                </summary>
+                <ul>
+                  <li>
+                    <label class="label">
+                      <input
+                        class="radio"
+                        name="colors"
+                        type="radio"
+                      />
+                      {{ $t("Original") }}
+                    </label>
+                  </li>
+                  <li>
+                    <label class="label">
+                      <input
+                        class="radio"
+                        name="colors"
+                        type="radio"
+                      />
+                      {{ $t("Invert") }}
+                    </label>
+                  </li>
+                  <li>
+                    <label class="label">
+                      <input
+                        class="radio"
+                        name="colors"
+                        type="radio"
+                      />
+                      {{ $t("Sepia") }}
+                    </label>
+                  </li>
+                  <li>
+                    <label class="label">
+                      <input
+                        class="radio"
+                        name="colors"
+                        type="radio"
+                      />
+                      {{ $t("Solarized light") }}
+                    </label>
+                  </li>
+                  <li>
+                    <label class="label">
+                      <input
+                        class="radio"
+                        name="colors"
+                        type="radio"
+                      />
+                      {{ $t("Solarized dark") }}
+                    </label>
+                  </li>
+                </ul>
+              </details>
+            </li>
+            <li>
+              <label class="label">
+                <input
+                  class="checkbox"
+                  type="checkbox"
+                />
+                {{ $t("Flip") }}
+              </label>
+            </li>
+            <li>
+              <details>
+                <summary>
+                  {{ $t("Layout") }}
+                </summary>
+                <ul>
+                  <li>
+                    <label class="label">
+                      <input
+                        v-model="ebook.layout"
+                        class="radio"
+                        name="layout"
+                        type="radio"
+                        :value="EbookLayout.SINGLE"
+                        @change="onLayoutChange"
+                      />
+                      {{ $t("Single") }}
+                    </label>
+                  </li>
+                  <li>
+                    <label class="label">
+                      <input
+                        v-model="ebook.layout"
+                        class="radio"
+                        name="layout"
+                        type="radio"
+                        :value="EbookLayout.DUAL_START"
+                        @change="onLayoutChange"
+                      />
+                      {{ $t("Dual start") }}
+                    </label>
+                  </li>
+                  <li>
+                    <label class="label">
+                      <input
+                        v-model="ebook.layout"
+                        class="radio"
+                        name="layout"
+                        type="radio"
+                        :value="EbookLayout.DUAL_END"
+                        @change="onLayoutChange"
+                      />
+                      {{ $t("Dual end") }}
+                    </label>
+                  </li>
+                </ul>
+              </details>
             </li>
             <li>
               <details>
@@ -59,114 +167,6 @@
                     <button>
                       {{ $t("Rotate right") }}
                     </button>
-                  </li>
-                </ul>
-              </details>
-            </li>
-            <li>
-              <label class="label cursor-pointer">
-                <span class="label-text">
-                  {{ $t("Flip") }}
-                </span>
-                <input
-                  class="checkbox"
-                  type="checkbox"
-                />
-              </label>
-            </li>
-            <li>
-              <details>
-                <summary>
-                  {{ $t("Layout") }}
-                </summary>
-                <ul>
-                  <li>
-                    <label class="label cursor-pointer">
-                      <span class="label-text">
-                        {{ $t("Single") }}
-                      </span>
-                      <input
-                        v-model="ebook.layout"
-                        type="radio"
-                        :value="EbookLayout.SINGLE"
-                        @change="onLayoutChange"
-                      />
-                    </label>
-                  </li>
-                  <li>
-                    <label class="label cursor-pointer">
-                      <span class="label-text">
-                        {{ $t("Dual start") }}
-                      </span>
-                      <input
-                        v-model="ebook.layout"
-                        type="radio"
-                        :value="EbookLayout.DUAL_START"
-                        @change="onLayoutChange"
-                      />
-                    </label>
-                  </li>
-                  <li>
-                    <label class="label cursor-pointer">
-                      <span class="label-text">
-                        {{ $t("Dual end") }}
-                      </span>
-                      <input
-                        v-model="ebook.layout"
-                        type="radio"
-                        :value="EbookLayout.DUAL_END"
-                        @change="onLayoutChange"
-                      />
-                    </label>
-                  </li>
-                </ul>
-              </details>
-            </li>
-            <li>
-              <details>
-                <summary>
-                  {{ $t("Colors") }}
-                </summary>
-                <ul>
-                  <li>
-                    <label class="label cursor-pointer">
-                      <span class="label-text">
-                        {{ $t("Original") }}
-                      </span>
-                      <input type="radio" />
-                    </label>
-                  </li>
-                  <li>
-                    <label class="label cursor-pointer">
-                      <span class="label-text">
-                        {{ $t("Invert") }}
-                      </span>
-                      <input type="radio" />
-                    </label>
-                  </li>
-                  <li>
-                    <label class="label cursor-pointer">
-                      <span class="label-text">
-                        {{ $t("Sepia") }}
-                      </span>
-                      <input type="radio" />
-                    </label>
-                  </li>
-                  <li>
-                    <label class="label cursor-pointer">
-                      <span class="label-text">
-                        {{ $t("Solarized light") }}
-                      </span>
-                      <input type="radio" />
-                    </label>
-                  </li>
-                  <li>
-                    <label class="label cursor-pointer">
-                      <span class="label-text">
-                        {{ $t("Solarized dark") }}
-                      </span>
-                      <input type="radio" />
-                    </label>
                   </li>
                 </ul>
               </details>

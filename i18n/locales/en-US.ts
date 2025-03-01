@@ -29,6 +29,7 @@ export default {
   "Add a mark to display it here.": "Add a bookmark to display it here.",
   "Add a note to display it here.": "Add a note to display it here.",
   "Add an item by editing the book.": "Add an item by editing the book.",
+  "Add item": "Add item",
   "All": "All",
   "Audiobook": "Audiobook",
   "Audiobooks": "Audiobooks",

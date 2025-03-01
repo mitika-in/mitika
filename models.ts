@@ -79,6 +79,7 @@ export function createAudiobook(parentId: string, name: string, file: File): Aud
     parentId,
     name,
     file,
+    order: 1,
     length: 1,
     position: { value: 0 },
     openingFirstTime: true,
@@ -107,6 +108,7 @@ export interface EbookPosition extends Position {
 
 export interface Ebook extends Item {
   color: EbookColor;
+  flip: boolean;
   layout: EbookLayout;
   position: EbookPosition;
   rotation: number;
@@ -120,9 +122,11 @@ export function createEbook(parentId: string, name: string, file: File): Ebook {
     parentId,
     name,
     file,
+    order: 1,
     position: { id: "", name: "1", x: 0, y: 0 },
     openingFirstTime: true,
     color: { foreground: 0x000, background: 0xfff },
+    flip: false,
     layout: EbookLayout.DUAL_START,
     rotation: 0,
     scale: 1,

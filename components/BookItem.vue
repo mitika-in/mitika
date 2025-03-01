@@ -1,7 +1,7 @@
 <template>
   <div class="flex flex-row gap-2 p-2 shadow rounded bg-base-200 items-center w-full">
     <button
-      class="flex flex-row gap-2 grow"
+      class="cursor-pointer flex flex-row gap-2 grow"
       @click="$emit('open')"
     >
       <figure>
@@ -25,10 +25,7 @@
         <MoreVerticalIcon class="size-4" />
       </template>
       <template #content>
-        <ul
-          tabindex="0"
-          class="menu bg-base-300 rounded-box w-64 shadow"
-        >
+        <ul class="w-64 menu bg-base-200 rounded-box shadow-sm">
           <li>
             <button @click="$emit('open')">
               {{ $t("Open") }}

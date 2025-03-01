@@ -8,7 +8,7 @@
         <FolderIcon class="size-4" />
       </button>
       <div class="grow flex justify-center lg:justify-end">
-        <label class="input input-bordered flex items-center gap-2">
+        <label class="input flex items-center gap-2">
           <SearchIcon class="size-4" />
           <input
             v-model.trim="search"
@@ -23,10 +23,7 @@
           <MenuIcon class="size-4" />
         </template>
         <template #content>
-          <ul
-            class="menu bg-base-200 rounded-box w-64 shadow"
-            tabindex="0"
-          >
+          <ul class="menu w-64 rounded-box bg-base-100 shadow-sm">
             <li>
               <details>
                 <summary>
@@ -37,16 +34,14 @@
                     v-for="tag of allTags"
                     :key="tag"
                   >
-                    <label class="label cursor-pointer">
-                      <span class="label-text">
-                        {{ tag }}
-                      </span>
+                    <label class="label">
                       <input
                         :checked="selectedTags.includes(tag)"
                         class="checkbox"
                         type="checkbox"
                         @change="toggleTag(tag)"
                       />
+                      {{ tag }}
                     </label>
                   </li>
                 </ul>
@@ -59,51 +54,51 @@
                 </summary>
                 <ul>
                   <li>
-                    <label class="label cursor-pointer">
-                      <span class="label-text">
-                        {{ $t("A–Z") }}
-                      </span>
+                    <label class="label">
                       <input
                         v-model="sort"
+                        class="radio"
+                        name="sort"
                         type="radio"
                         :value="Sort.ALPHABETICAL"
                       />
+                      {{ $t("A–Z") }}
                     </label>
                   </li>
                   <li>
-                    <label class="label cursor-pointer">
-                      <span class="label-text">
-                        {{ $t("Z–A") }}
-                      </span>
+                    <label class="label">
                       <input
                         v-model="sort"
+                        class="radio"
+                        name="sort"
                         type="radio"
                         :value="Sort.REVERSE_ALPHABETICAL"
                       />
+                      {{ $t("Z–A") }}
                     </label>
                   </li>
                   <li>
-                    <label class="label cursor-pointer">
-                      <span class="label-text">
-                        {{ $t("Recent first") }}
-                      </span>
+                    <label class="label">
                       <input
                         v-model="sort"
+                        class="radio"
+                        name="sort"
                         type="radio"
                         :value="Sort.RECENT_FIRST"
                       />
+                      {{ $t("Recent first") }}
                     </label>
                   </li>
                   <li>
-                    <label class="label cursor-pointer">
-                      <span class="label-text">
-                        {{ $t("Recent last") }}
-                      </span>
+                    <label class="label">
                       <input
                         v-model="sort"
+                        class="radio"
+                        name="sort"
                         type="radio"
                         :value="Sort.RECENT_LAST"
                       />
+                      {{ $t("Recent last") }}
                     </label>
                   </li>
                 </ul>

@@ -6,7 +6,7 @@
     <div class="flex flex-row gap-4 items-center">
       <span>{{ formatTime(audiobook.position.value, hoursLength) }}</span>
       <input
-        class="range"
+        class="range grow"
         :max="audiobook.length"
         min="0"
         step="1"

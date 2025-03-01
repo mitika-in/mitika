@@ -2,6 +2,7 @@
   <div>
     <button
       class="btn"
+      :style="`width: ${Math.ceil(Math.log10(pages.length) + 1)}rem`"
       @click="dialog.show()"
     >
       {{ position.name }}
@@ -14,7 +15,7 @@
         <div class="flex flex-row gap-4">
           <input
             v-model="positionInput"
-            class="input input-bordered grow"
+            class="input grow"
             :placeholder="$t('Go to page…')"
             @keyup.enter="onEnter"
           />

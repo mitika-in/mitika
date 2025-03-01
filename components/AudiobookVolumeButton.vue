@@ -1,14 +1,11 @@
 <template>
-  <Dropdown
-    :alignTop="true"
-    :ghostBtn="false"
-  >
+  <Dropdown :ghostBtn="false">
     <template #button>
       {{ `${prettyVolume}%` }}
     </template>
     <template #content>
-      <div class="flex flex-col gap-2 bg-base-200 rounded-box w-64 p-2 shadow">
-        <ul class="menu">
+      <div class="flex flex-col gap-2 bg-base-200 rounded-box w-64 p-2 shadow-sm">
+        <ul class="menu w-full">
           <li>
             <button @click="emitChange(0)">
               {{ $t("Mute") }}
@@ -37,19 +34,19 @@
         </ul>
         <div class="join w-full">
           <button
-            class="join-item btn btn-outline border-neutral"
+            class="join-item btn"
             :disabled="volume <= MIN"
             @click="emitChange(volume - STEP)"
           >
             <MinusIcon class="size-4" />
           </button>
           <input
-            class="join-item input input-bordered border-neutral grow w-[4rem]"
+            class="join-item input grow w-[4rem]"
             :value="prettyVolume"
             @change="onChange"
           />
           <button
-            class="join-item btn btn-outline border-neutral"
+            class="join-item btn"
             :disabled="volume >= MAX"
             @click="emitChange(volume + STEP)"
           >

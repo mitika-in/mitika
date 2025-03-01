@@ -1,53 +1,28 @@
 <template>
-  <div class="flex flex-col gap-2">
-    <div class="flex flex-row justify-between items-center">
-      <h2>
-        {{ name }}
-      </h2>
-      <button
-        class="btn btn-ghost"
-        @click="addItem"
-      >
-        <PlusIcon class="size-4" />
-      </button>
-    </div>
-    <ol
-      v-show="items.length != 0"
-      ref="list-el"
-      class="divide-y divide-neutral"
-    >
+  <fieldset class="fieldset">
+    <legend class="fieldset-legend">
+      {{ name }}
+    </legend>
+    <ol class="list rounded-box shadow-sm">
       <EditSectionRow
         v-for="(item, i) of items"
         :key="item.id"
-        :class="{
-          'rounded-t-xl': i == 0,
-          'rounded-b-xl': i == items.length - 1,
-        }"
         :item="item"
-        :position="
-          items.length == 1
-            ? 'single'
-            : i == 0
-              ? 'top'
-              : i == items.length - 1
-                ? 'bottom'
-                : 'middle'
-        "
+        :position="i"
+        :length="items.length"
         @moveDown="move(i, i + 1)"
         @moveUp="move(i, i - 1)"
         @remove="remove(item)"
       />
+      <button
+        class="list-row btn btn-ghost flex flex-row gap-2 items-center"
+        @click="addItem"
+      >
+        <PlusIcon class="size-4" />
+        {{ $t("Add item") }}
+      </button>
     </ol>
-    <p v-show="items.length == 0">
-      <span>
-        {{ splits[0] }}
-      </span>
-      <PlusIcon class="inline size-4" />
-      <span>
-        {{ splits[1] }}
-      </span>
-    </p>
-  </div>
+  </fieldset>
 </template>
 <script lang="ts" setup>
 import { createAudiobook, createEbook, Item, ItemType } from "@/models";
@@ -66,9 +41,6 @@ interface Props {
 const props = defineProps<Props>();
 
 const dialog = inject("dialog");
-
-const empty = t("This section is empty. Use the + to add a new item.");
-const splits = ref(empty.split("+"));
 
 async function addItem() {
   const [file] = await storage.chooseFiles(false, [

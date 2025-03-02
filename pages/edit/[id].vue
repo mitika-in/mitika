@@ -60,12 +60,12 @@
       <EditSection
         :items="newAudiobooks"
         :name="$t('Audiobooks')"
-        :type="ItemType.AUDIOBOOK"
+        :type="ItemType.Audiobook"
       />
       <EditSection
         :items="newEbooks"
         :name="$t('Ebooks')"
-        :type="ItemType.EBOOK"
+        :type="ItemType.Ebook"
       />
     </main>
   </div>
@@ -86,9 +86,9 @@ const storage = await useStorage();
 
 const book = ref(await database.getBook(route.params.id));
 
-const oldAudiobooks = ref(await database.getItems(book.value.id, ItemType.AUDIOBOOK));
+const oldAudiobooks = ref(await database.getItems(book.value.id, ItemType.Audiobook));
 const newAudiobooks = ref([...oldAudiobooks.value]);
-const oldEbooks = ref(await database.getItems(book.value.id, ItemType.EBOOK));
+const oldEbooks = ref(await database.getItems(book.value.id, ItemType.Ebook));
 const newEbooks = ref([...oldEbooks.value]);
 
 const name = ref(book.value.name);

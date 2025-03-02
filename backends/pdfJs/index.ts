@@ -48,6 +48,43 @@ async function parseOutline(doc: PDFDocumentProxy, rawOutline: RawOutline[]): Pr
   return outline;
 }
 
+function multiply255(a: number, b: number): number {
+  let x = a * b + 128;
+  x += x >> 8;
+  return x >> 8;
+}
+
+function tintCanvas(
+  context: CanvasRenderingContext2D,
+  height: number,
+  width: number,
+  black: number,
+  white: number,
+) {
+  const image = context.getImageData(0, 0, width, height);
+  const data = image.data;
+
+  const rb = (black >> 16) & 255;
+  const gb = (black >> 8) & 255;
+  const bb = black & 255;
+
+  const rw = (white >> 16) & 255;
+  const gw = (white >> 8) & 255;
+  const bw = white & 255;
+
+  const rm = rw - rb;
+  const gm = gw - gb;
+  const bm = bw - bb;
+
+  for (let i = 0; i < data.length; i += 4) {
+    data[i] = rb + multiply255(data[i], rm);
+    data[i + 1] = gb + multiply255(data[i + 1], gm);
+    data[i + 2] = bb + multiply255(data[i + 2], bm);
+  }
+
+  context.putImageData(image, 0, 0);
+}
+
 function computeVisibleRatio(pTop: number, pBottom: number, cTop: number, cBottom: number): number {
   if (cBottom < pTop) return 0;
 
@@ -61,16 +98,16 @@ function computeVisibleRatio(pTop: number, pBottom: number, cTop: number, cBotto
 }
 
 function lengthToRows(length: number, layout: EbookLayout): number {
-  if (layout == EbookLayout.SINGLE) return length;
-  else if (layout == EbookLayout.DUAL_START) return Math.ceil(length / 2);
-  else if (layout == EbookLayout.DUAL_END) return Math.ceil((length + 1) / 2);
+  if (layout == EbookLayout.Single) return length;
+  else if (layout == EbookLayout.DualStart) return Math.ceil(length / 2);
+  else if (layout == EbookLayout.DualEnd) return Math.ceil((length + 1) / 2);
   else throw new TypeError(`Unknown layout: ${layout}`);
 }
 
 function rowToPageNumbers(row: number, layout: EbookLayout): number[] {
-  if (layout == EbookLayout.SINGLE) return [row];
-  else if (layout == EbookLayout.DUAL_START) return [2 * row - 1, 2 * row];
-  else if (layout == EbookLayout.DUAL_END) return [2 * (row - 1), 2 * row - 1];
+  if (layout == EbookLayout.Single) return [row];
+  else if (layout == EbookLayout.DualStart) return [2 * row - 1, 2 * row];
+  else if (layout == EbookLayout.DualEnd) return [2 * (row - 1), 2 * row - 1];
   else throw new TypeError(`Unknown layout: ${layout}`);
 }
 
@@ -88,9 +125,9 @@ function pageNumberToPageNumbers(
   let start = 0;
   let end = 0;
 
-  if (layout == EbookLayout.SINGLE) {
+  if (layout == EbookLayout.Single) {
     start = pageNumber;
-  } else if (layout == EbookLayout.DUAL_START) {
+  } else if (layout == EbookLayout.DualStart) {
     if (pageNumber % 2 == 1) {
       start = pageNumber;
       end = pageNumber + 1;
@@ -98,7 +135,7 @@ function pageNumberToPageNumbers(
       start = pageNumber - 1;
       end = pageNumber;
     }
-  } else if (layout == EbookLayout.DUAL_END) {
+  } else if (layout == EbookLayout.DualEnd) {
     if (pageNumber % 2 == 1) {
       start = pageNumber - 1;
       end = pageNumber;
@@ -118,8 +155,9 @@ function pageNumberToPageNumbers(
 
 interface RenderingOptions {
   color: EbookColor;
+  flip: boolean;
   scale: number;
-  rotation: number;
+  rotate: number;
 }
 
 const DPR = window.devicePixelRatio || 1;
@@ -129,10 +167,11 @@ export class PdfJs extends EbookBackend {
   private blobUrl!: string;
 
   private pageNumber: number = 1;
-  private color: EbookColor = { foreground: 0x000, background: 0xfff };
-  private layout: EbookLayout = EbookLayout.DUAL_END;
+  private color: EbookColor = { foreground: 0x000000, background: 0xffffff };
+  private flip: boolean = false;
+  private layout: EbookLayout = EbookLayout.DualEnd;
   private scale: number = 1;
-  private rotation: number = 0;
+  private rotate: number = 0;
 
   private doc!: PDFDocumentProxy;
   private tasks = new Map<CanvasRenderingContext2D, RenderTask>();
@@ -184,8 +223,9 @@ export class PdfJs extends EbookBackend {
 
     const proxy = await this.doc.getPage(pageNumber);
     const viewport = proxy.getViewport({
+      dontFlip: false,
       scale: options.scale,
-      rotation: options.rotation,
+      rotation: options.rotate,
     });
     const transform = [DPR, 0, 0, DPR, 0, 0];
     const task = proxy.render({ canvasContext: context, transform, viewport });
@@ -193,6 +233,13 @@ export class PdfJs extends EbookBackend {
 
     try {
       await task.promise;
+      tintCanvas(
+        context,
+        viewport.height,
+        viewport.width,
+        this.color.foreground,
+        this.color.background,
+      );
       debug(`Rendered page: ${pageNumber}`);
     } catch (error) {
       if (error instanceof RenderingCancelledException)
@@ -207,8 +254,9 @@ export class PdfJs extends EbookBackend {
     debug(`Queueing render for page: ${page.pageNumber}`);
     const context = page.createCanvas();
     await this.renderPage(page.pageNumber, context, {
+      flip: this.flip,
       color: this.color,
-      rotation: this.rotation,
+      rotate: this.rotate,
       scale: this.scale,
     });
   }
@@ -242,7 +290,15 @@ export class PdfJs extends EbookBackend {
     for (let i = 1; i <= this.doc.numPages; i++) {
       const proxy = await this.doc.getPage(i);
       const view = proxy.getViewport({ scale: 1 });
-      const page = new PageDiv(i, view.width * DPR, view.height * DPR, 1, PageDivType.REAL);
+      const page = new PageDiv(
+        i,
+        view.width * DPR,
+        view.height * DPR,
+        false,
+        0,
+        1,
+        PageDivType.REAL,
+      );
       this.pages.push(page);
       this.observer.observe(page);
     }
@@ -338,15 +394,13 @@ export class PdfJs extends EbookBackend {
     const context = canvas.getContext("2d");
     if (context == null) throw new TypeError("Unable to get context for cover");
 
-    await this.renderPage(pageNumber, context, { scale: 1 });
+    await this.renderPage(pageNumber, context, { flip: false, rotate: 0, scale: 1 });
     const blob = canvas.convertToBlob({ type: "image/png" });
 
     return blob;
   }
 
-  async setLayout(layout: EbookLayout): Promise<void> {
-    debug(`Changing to layout: ${layout}`);
-    this.layout = layout;
+  private async layPages(): Promise<void> {
     this.options.container.replaceChildren();
     this.dummyPages.map((page) => page.remove());
 
@@ -374,6 +428,19 @@ export class PdfJs extends EbookBackend {
         div.appendChild(page);
       }
     }
+  }
+
+  async setFlip(flip: boolean): Promise<void> {
+    debug(`Changing to flip: ${flip}`);
+    this.flip = flip;
+    for (const page of this.pages) page.setFlip(this.flip);
+    for (const page of this.dummyPages) page.setFlip(this.flip);
+  }
+
+  async setLayout(layout: EbookLayout): Promise<void> {
+    debug(`Changing to layout: ${layout}`);
+    this.layout = layout;
+    await this.layPages();
   }
 
   async setScale(scale: number): Promise<void> {
@@ -418,7 +485,7 @@ export class PdfJs extends EbookBackend {
     for (const pageNumber of pageNumbers)
       if (pageNumber != 0) width += this.pages[pageNumber - 1].width;
 
-    if (this.layout != EbookLayout.SINGLE) width += this.options.gap;
+    if (this.layout != EbookLayout.Single) width += this.options.gap;
 
     const scale = this.options.container.clientWidth / width;
 
@@ -438,7 +505,7 @@ export class PdfJs extends EbookBackend {
       }
     }
 
-    if (this.layout != EbookLayout.SINGLE) width += this.options.gap;
+    if (this.layout != EbookLayout.Single) width += this.options.gap;
 
     const scale = Math.min(
       this.options.container.clientWidth / width,
@@ -450,10 +517,32 @@ export class PdfJs extends EbookBackend {
   async setColor(color: EbookColor): Promise<void> {
     debug(f`Changing to color: ${color}`);
     this.color = color;
+
+    for (const page of this.pages) {
+      if (this.visiblePages.has(page.pageNumber)) {
+        debug(f`Re-rendering ${page.pageNumber} at ${this.color} color`);
+        await this.queueRender(page);
+      }
+    }
   }
 
-  async setRotation(rotation: number): Promise<void> {
-    debug(`Changing to rotation: ${rotation}`);
-    this.rotation = rotation;
+  async setRotate(rotate: number): Promise<void> {
+    debug(`Changing to rotate: ${rotate}`);
+    this.rotate = rotate;
+    const position = { id: this.pageNumber.toString(), name: "", x: 0, y: 0 };
+
+    for (const page of this.pages) {
+      page.setRotate(this.rotate);
+      if (this.visiblePages.has(page.pageNumber)) {
+        debug(`Re-rendering ${page.pageNumber} at ${this.rotate} rotate`);
+        await this.queueRender(page);
+      }
+    }
+
+    for (const page of this.dummyPages) {
+      page.setRotate(this.rotate);
+    }
+
+    await this.setPosition(position);
   }
 }

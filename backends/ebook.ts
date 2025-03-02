@@ -14,8 +14,9 @@ export abstract class EbookBackend extends Backend {
   abstract getPages(): Promise<EbookPosition[]>;
   abstract getThumbnail(position: EbookPosition): Promise<Blob | null>;
   abstract setColor(color: EbookColor): Promise<void>;
+  abstract setFlip(flip: boolean): Promise<void>;
   abstract setLayout(layout: EbookLayout): Promise<void>;
-  abstract setRotation(rotation: number): Promise<void>;
+  abstract setRotate(rotate: number): Promise<void>;
   abstract setScale(scale: number): Promise<void>;
   abstract scaleToFitWidth(): Promise<void>;
   abstract scaleToFitHeight(): Promise<void>;

@@ -1,5 +1,5 @@
 import { type AudiobookBackend } from "@/backends/audiobook";
-import { type EbookBackend, type EbookPageView } from "@/backends/ebook";
+import { type EbookBackend } from "@/backends/ebook";
 import { HtmlAudio } from "@/backends/htmlAudio";
 import { PdfJs } from "@/backends/pdfJs";
 
@@ -13,4 +13,4 @@ export function useEbookBackend(type: string): new () => EbookBackend {
   else throw new Error(`Unknown ebook extension: ${type}`);
 }
 
-export { type AudiobookBackend, type EbookBackend, type EbookPageView };
+export { type AudiobookBackend, type EbookBackend };

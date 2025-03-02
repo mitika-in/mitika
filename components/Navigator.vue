@@ -5,10 +5,10 @@
       class="select select-bordered w-full"
       @change="updateSections"
     >
-      <option :value="ItemType.AUDIOBOOK">
+      <option :value="ItemType.Audiobook">
         {{ $t("Audiobooks") }}
       </option>
-      <option :value="ItemType.EBOOK">
+      <option :value="ItemType.Ebook">
         {{ $t("Ebooks") }}
       </option>
     </select>
@@ -154,7 +154,7 @@ const ebookNotes = ref([]);
 const ebookMarks = ref([]);
 const ebooks = ref([]);
 
-const currentItem = ref(ItemType.AUDIOBOOK);
+const currentItem = ref(ItemType.Audiobook);
 const currentSection = ref(SectionType.OUTLINES);
 const items = ref([]);
 const outlines = ref([]);
@@ -162,12 +162,12 @@ const notes = ref([]);
 const marks = ref([]);
 
 function updateSections() {
-  if (currentItem.value == ItemType.AUDIOBOOK) {
+  if (currentItem.value == ItemType.Audiobook) {
     items.value = audiobooks.value;
     outlines.value = audiobookOutlines.value;
     notes.value = audiobookNotes.value;
     marks.value = audiobookMarks.value;
-  } else if (currentItem.value == ItemType.EBOOK) {
+  } else if (currentItem.value == ItemType.Ebook) {
     items.value = ebooks.value;
     outlines.value = ebookOutlines.value;
     notes.value = ebookNotes.value;
@@ -190,10 +190,10 @@ async function fetchItemDetails(item: Item) {
   let notes;
   let marks;
 
-  if (item.type == ItemType.AUDIOBOOK) {
+  if (item.type == ItemType.Audiobook) {
     notes = audiobookNotes;
     marks = audiobookMarks;
-  } else if (item.type == ItemType.EBOOK) {
+  } else if (item.type == ItemType.Ebook) {
     notes = ebookNotes;
     marks = ebookMarks;
   } else {
@@ -207,9 +207,9 @@ async function fetchItemDetails(item: Item) {
 async function setBook(book: Book) {
   if (!database) database = await useDatabase();
 
-  audiobooks.value = await database.getItems(book.id, ItemType.AUDIOBOOK);
-  ebooks.value = await database.getItems(book.id, ItemType.EBOOK);
-  currentItem.value = audiobooks.value.length != 0 ? ItemType.AUDIOBOOK : ItemType.EBOOK;
+  audiobooks.value = await database.getItems(book.id, ItemType.Audiobook);
+  ebooks.value = await database.getItems(book.id, ItemType.Ebook);
+  currentItem.value = audiobooks.value.length != 0 ? ItemType.Audiobook : ItemType.Ebook;
 
   audiobook.value = findLastItem(book.lastAudiobookId, audiobooks.value);
   if (audiobook.value) {
@@ -228,8 +228,8 @@ async function setBook(book: Book) {
 
 async function setOutlines(type: ItemType, outlines: Outline[]) {
   debug(f`Setting outlines of length=${outlines.length} for type=${type}`);
-  if (type == ItemType.AUDIOBOOK) audiobookOutlines.value = outlines;
-  else if (type == ItemType.EBOOK) ebookOutlines.value = outlines;
+  if (type == ItemType.Audiobook) audiobookOutlines.value = outlines;
+  else if (type == ItemType.Ebook) ebookOutlines.value = outlines;
   else throw new Error(`Unknown item type: ${type}`);
   updateSections();
 }

@@ -53,8 +53,8 @@ async function addItem() {
 
   const name = toTitleCase(splitBaseName(file.name).name);
   let item;
-  if (props.type == ItemType.AUDIOBOOK) item = createAudiobook(0, name, file);
-  else if (props.type == ItemType.EBOOK) item = createEbook(0, name, file);
+  if (props.type == ItemType.Audiobook) item = createAudiobook(0, name, file);
+  else if (props.type == ItemType.Ebook) item = createEbook(0, name, file);
 
   props.items.push(item);
 }

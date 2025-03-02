@@ -52,12 +52,12 @@
         ref="ebook-viewer"
         class="grow"
         @metadata="onMetadata"
-        @outlines="async (o) => await onOutlines(ItemType.EBOOK, o)"
+        @outlines="async (o) => await onOutlines(ItemType.Ebook, o)"
       />
       <AudiobookPlayer
         ref="audiobook-player"
         @metadata="onMetadata"
-        @outlines="async (o) => await onOutlines(ItemType.AUDIOBOOK, o)"
+        @outlines="async (o) => await onOutlines(ItemType.Audiobook, o)"
       />
     </div>
     <aside class="drawer-side">
@@ -101,10 +101,10 @@ async function open(item: Item) {
 
   debug(f`Opening item: ${item}`);
 
-  if (item.type == ItemType.AUDIOBOOK) {
+  if (item.type == ItemType.Audiobook) {
     component = player.value;
     openItem = audiobook;
-  } else if (item.type == ItemType.EBOOK) {
+  } else if (item.type == ItemType.Ebook) {
     component = viewer.value;
     openItem = ebook;
   } else {

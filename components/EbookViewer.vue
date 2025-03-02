@@ -37,55 +37,10 @@
                   {{ $t("Colors") }}
                 </summary>
                 <ul>
-                  <li>
-                    <label class="label">
-                      <input
-                        class="radio"
-                        name="colors"
-                        type="radio"
-                      />
-                      {{ $t("Original") }}
-                    </label>
-                  </li>
-                  <li>
-                    <label class="label">
-                      <input
-                        class="radio"
-                        name="colors"
-                        type="radio"
-                      />
-                      {{ $t("Invert") }}
-                    </label>
-                  </li>
-                  <li>
-                    <label class="label">
-                      <input
-                        class="radio"
-                        name="colors"
-                        type="radio"
-                      />
-                      {{ $t("Sepia") }}
-                    </label>
-                  </li>
-                  <li>
-                    <label class="label">
-                      <input
-                        class="radio"
-                        name="colors"
-                        type="radio"
-                      />
-                      {{ $t("Solarized light") }}
-                    </label>
-                  </li>
-                  <li>
-                    <label class="label">
-                      <input
-                        class="radio"
-                        name="colors"
-                        type="radio"
-                      />
-                      {{ $t("Solarized dark") }}
-                    </label>
+                  <li v-for="entry of Object.entries(ColorScheme)">
+                    <button @click="onColorClick(entry[1])">
+                      {{ $t(entry[0]) }}
+                    </button>
                   </li>
                 </ul>
               </details>
@@ -93,8 +48,10 @@
             <li>
               <label class="label">
                 <input
+                  v-model="ebook.flip"
                   class="checkbox"
                   type="checkbox"
+                  @change="onFlipChange"
                 />
                 {{ $t("Flip") }}
               </label>
@@ -112,7 +69,7 @@
                         class="radio"
                         name="layout"
                         type="radio"
-                        :value="EbookLayout.SINGLE"
+                        :value="EbookLayout.Single"
                         @change="onLayoutChange"
                       />
                       {{ $t("Single") }}
@@ -125,7 +82,7 @@
                         class="radio"
                         name="layout"
                         type="radio"
-                        :value="EbookLayout.DUAL_START"
+                        :value="EbookLayout.DualStart"
                         @change="onLayoutChange"
                       />
                       {{ $t("Dual start") }}
@@ -138,7 +95,7 @@
                         class="radio"
                         name="layout"
                         type="radio"
-                        :value="EbookLayout.DUAL_END"
+                        :value="EbookLayout.DualEnd"
                         @change="onLayoutChange"
                       />
                       {{ $t("Dual end") }}
@@ -150,21 +107,21 @@
             <li>
               <details>
                 <summary>
-                  {{ $t("Rotation") }}
+                  {{ $t("Rotate") }}
                 </summary>
                 <ul>
                   <li>
-                    <button>
+                    <button @click="onRotateOriginalClick">
                       {{ $t("Original") }}
                     </button>
                   </li>
                   <li>
-                    <button>
+                    <button @click="onRotateLeftClick">
                       {{ $t("Rotate left") }}
                     </button>
                   </li>
                   <li>
-                    <button>
+                    <button @click="onRotateRightClick">
                       {{ $t("Rotate right") }}
                     </button>
                   </li>
@@ -181,7 +138,7 @@
 <script setup lang="ts">
 import { useDatabase } from "@/database";
 import { useEbookBackend } from "@/backends";
-import { EbookLayout, Ebook } from "@/models";
+import { ColorScheme, EbookLayout, Ebook } from "@/models";
 import { useLogger } from "@/logging";
 import { Outline } from "@/backends/outline";
 import { useStorage } from "@/storages";
@@ -227,16 +184,23 @@ async function open(item: Ebook) {
   pages.value = await backend.getPages();
 
   if (ebook.value.openingFirstTime) {
-    ebook.value.layout = EbookLayout.DUAL_END;
+    ebook.value.color = ColorScheme.Original;
+    ebook.value.flip = false;
+    ebook.value.rotate = 0;
+    ebook.value.layout = EbookLayout.DualEnd;
     ebook.value.position = pages.value[0];
     await backend.scaleToFitPage();
     ebook.value.openingFirstTime = false;
   } else {
     await backend.setScale(ebook.value.scale);
+    await backend.setColor(ebook.value.color);
   }
 
-  await onLayoutChange(ebook.value.layout);
-  await onPositionChange(ebook.value.position);
+  await backend.setFlip(ebook.value.flip);
+  await backend.setRotate(ebook.value.rotate);
+  await backend.setColor(ebook.value.color);
+  await backend.setLayout(ebook.value.layout);
+  await backend.setPosition(ebook.value.position);
 
   positionButton.value.open(backend);
 
@@ -302,8 +266,37 @@ async function onScaleToFitPage() {
   await backend.scaleToFitPage();
 }
 
+async function onColorClick(color: EbookColor) {
+  ebook.value.color = color;
+  debug(f`Changing to color: ${color}`);
+  await backend.setColor(color);
+}
+
+async function onFlipChange() {
+  debug(`Changing to flip: ${ebook.value.flip}`);
+  await backend.setFlip(ebook.value.flip);
+}
+
 async function onLayoutChange() {
   debug(`Changing to layout: ${ebook.value.layout}`);
   await backend.setLayout(ebook.value.layout);
+}
+
+async function onRotateOriginalClick() {
+  ebook.value.rotate = 0;
+  debug(`Changing to rotate: ${ebook.value.rotate}`);
+  await backend.setRotate(ebook.value.rotate);
+}
+
+async function onRotateLeftClick() {
+  ebook.value.rotate = (ebook.value.rotate - 90) % 360;
+  debug(`Changing to rotate: ${ebook.value.rotate}`);
+  await backend.setRotate(ebook.value.rotate);
+}
+
+async function onRotateRightClick() {
+  ebook.value.rotate = (ebook.value.rotate + 90) % 360;
+  debug(`Changing to rotate: ${ebook.value.rotate}`);
+  await backend.setRotate(ebook.value.rotate);
 }
 </script>

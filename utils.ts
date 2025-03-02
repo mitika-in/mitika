@@ -25,13 +25,13 @@ export function toTitleCase(str: string): string {
 }
 
 export function itemTypeToString(type: ItemType): string {
-  if (type == ItemType.AUDIOBOOK) return "Audiobook";
-  else if (type == ItemType.EBOOK) return "Ebook";
+  if (type == ItemType.Audiobook) return "Audiobook";
+  else if (type == ItemType.Ebook) return "Ebook";
   else throw new Error(`Unknown item type: ${type}`);
 }
 
 export function itemTypeToFileTypes(type: ItemType): string[] {
-  if (type == ItemType.AUDIOBOOK) return Constants.AUDIOBOOK_TYPES;
-  else if (type == ItemType.EBOOK) return Constants.EBOOK_TYPES;
+  if (type == ItemType.Audiobook) return Constants.AUDIOBOOK_TYPES;
+  else if (type == ItemType.Ebook) return Constants.EBOOK_TYPES;
   else throw new Error(`Unknown item type: ${type}`);
 }

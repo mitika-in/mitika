@@ -56,7 +56,7 @@ import { useLogger } from "@/logging";
 import { EbookPosition } from "@/models";
 import { EbookBackend } from "@/backends";
 
-const { f, debug } = useLogger("page-button");
+const { f, debug } = useLogger("ebook-position-button");
 
 interface Props {
   position: EbookPosition;

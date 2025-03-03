@@ -13,6 +13,7 @@
         :position="ebook.position"
         @change="onPositionChange"
       />
+      <EbookSearchButton />
       <TitleBar
         class="grow"
         :subtitle="ebook.file.name"

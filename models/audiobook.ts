@@ -1,14 +1,8 @@
 import { type File } from "@/models/file";
 import { type Item, ItemType } from "@/models/item";
-import { type Position } from "@/models/position";
-
-export interface AudiobookPosition extends Position {
-  value: number;
-}
 
 export interface Audiobook extends Item {
   length: number;
-  position: AudiobookPosition;
   rate: number;
   volume: number;
 }

@@ -12,8 +12,8 @@
         :key="button.action"
         class="btn"
         :class="{
-          'btn-error': button.type == ButtonType.DESTRUCTIVE,
-          'btn-primary': button.type == ButtonType.SUGGESTED,
+          'btn-error': button.type == ButtonType.Destructive,
+          'btn-primary': button.type == ButtonType.Suggested,
         }"
         @click="respond(button.action)"
       >
@@ -23,11 +23,7 @@
   </Dialog>
 </template>
 <script setup lang="ts">
-enum ButtonType {
-  DESTRUCTIVE = "destructive",
-  NORMAL = "normal",
-  SUGGESTED = "suggested",
-}
+import { ButtonType } from "@/components/buttonType";
 
 interface Button {
   action: string;
@@ -35,28 +31,25 @@ interface Button {
   type: ButtonType;
 }
 
+type ActionCallback = (action: string) => Promise<void>;
+
 const dialog = useTemplateRef("dialog");
 
-const dialogButtons = ref([]);
-const dialogCallback = ref("");
+const dialogButtons: Ref<Button[]> = ref([]);
+let dialogCallback: ActionCallback | null;
 const dialogMessage = ref("");
 const dialogTitle = ref("");
 
 async function hide() {
-  dialog.value.hide();
+  dialog.value!.hide();
 }
 
-async function show(
-  title: string,
-  message: string,
-  buttons: Button[],
-  callback: (action: string) => Promise<void>,
-) {
+async function show(title: string, message: string, buttons: Button[], callback: ActionCallback) {
   dialogTitle.value = title;
   dialogMessage.value = message;
   dialogButtons.value = buttons;
-  dialogCallback.value = callback;
-  dialog.value.show();
+  dialogCallback = callback;
+  dialog.value!.show();
 }
 
 defineExpose({
@@ -66,6 +59,6 @@ defineExpose({
 
 async function respond(action: string) {
   await hide();
-  await dialogCallback.value(action);
+  await dialogCallback!(action);
 }
 </script>

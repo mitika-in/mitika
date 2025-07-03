@@ -1,6 +1,5 @@
 export interface File {
-  id: string;
   name: string;
   type: string;
-  storage: string;
+  source: string;
 }

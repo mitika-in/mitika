@@ -4,6 +4,8 @@ export interface Book {
   authors: string[];
   lastAudiobookId: string | null;
   lastEbookId: string | null;
+  openAudiobook: boolean;
+  openEbook: boolean;
   lastOpened: Date;
   tags: string[];
 }
@@ -15,6 +17,8 @@ export function createBook(name: string): Book {
     authors: [],
     lastAudiobookId: null,
     lastEbookId: null,
+    openAudiobook: true,
+    openEbook: true,
     lastOpened: new Date(),
     tags: [],
   };

@@ -1,6 +1,6 @@
 <template>
   <button
-    class="btn btn-ghost flex flex-row gap-2 items-center badge badge-secondary"
+    class="btn btn-ghost badge badge-secondary flex flex-row items-center gap-2"
     @click.prevent="emitRemove"
   >
     <span>

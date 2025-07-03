@@ -1,10 +1,10 @@
 <template>
-  <Dropdown :ghostBtn="false">
+  <Dropdown popoverId="audiobookRateButtonPo">
     <template #button>
-      {{ `${prettyRate}x` }}
+      <WatchIcon class="size-4" />
     </template>
     <template #content>
-      <div class="flex flex-col gap-2 p-2 bg-base-100 rounded-box w-64 shadow-sm">
+      <div class="bg-base-100 flex w-64 flex-col gap-2 rounded-sm p-2 shadow-sm">
         <ul class="menu w-full">
           <li>
             <button @click="emitChange(0.25)">
@@ -41,7 +41,7 @@
             <MinusIcon class="size-4" />
           </button>
           <input
-            class="join-item input grow w-[4rem]"
+            class="join-item input w-[4rem] grow"
             :value="prettyRate"
             @change="onChange"
           />
@@ -76,15 +76,15 @@ const MIN = 0.1;
 const STEP = 0.25;
 const MAX = 4;
 
-function emitChange(rate) {
+function emitChange(rate: number) {
   const validRate = Math.min(Math.max(rate, MIN), MAX);
   emit("change", validRate);
 }
 
-function onChange(event) {
-  const rate = Number(event.target.value);
+function onChange(event: Event) {
+  const rate = Number((event.target as HTMLInputElement).value);
   if (isNaN(rate)) {
-    event.target.value = prettyRate.value;
+    (event.target as HTMLInputElement).value = prettyRate.value;
     return;
   }
   emitChange(rate);

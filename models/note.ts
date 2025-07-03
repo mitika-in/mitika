@@ -12,7 +12,7 @@ export function createNote(
   parentId: string,
   name: string,
   description: string,
-  position: string,
+  position: Position,
 ): Note {
   return { id: window.crypto.randomUUID(), parentId, name, description, position };
 }

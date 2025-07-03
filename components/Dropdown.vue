@@ -1,17 +1,17 @@
 <template>
   <button
     class="btn"
-    :class="{ 'btn-ghost': ghostBtn }"
-    :popovertarget="`popover-${id}`"
-    :style="`anchor-name:--anchor-${id}`"
+    :class="{ 'btn-ghost': ghostBtn, 'w-full md:w-64': responsive }"
+    :popovertarget="popoverId"
+    :style="`anchor-name:--anchor-${popoverId}`"
   >
     <slot name="button"></slot>
   </button>
   <div
     class="dropdown"
-    :id="`popover-${id}`"
+    :id="popoverId"
     popover
-    :style="`position-anchor:--anchor-${id}`"
+    :style="`position-anchor:--anchor-${popoverId}`"
   >
     <slot name="content"></slot>
   </div>
@@ -19,9 +19,9 @@
 <script setup lang="ts">
 interface Props {
   ghostBtn?: boolean;
+  popoverId: string;
+  responsive?: boolean;
 }
 
-const { ghostBtn = true } = defineProps<Props>();
-
-const id = Math.ceil(Math.random() * 100).toString();
+const { ghostBtn = true, responsive = false } = defineProps<Props>();
 </script>

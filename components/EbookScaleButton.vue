@@ -1,10 +1,10 @@
 <template>
-  <Dropdown :ghostBtn="false">
+  <Dropdown popoverId="ebookScaleButtonPo">
     <template #button>
-      {{ `${prettyScale}%` }}
+      <EyeIcon class="size-4" />
     </template>
     <template #content>
-      <div class="flex flex-col gap-2 p-2 rounded-box w-64 bg-base-100 shadow-sm">
+      <div class="bg-base-100 flex w-64 flex-col gap-2 rounded-sm p-2 shadow-sm">
         <ul class="menu w-full">
           <li>
             <button @click="$emit('change', 1)">
@@ -36,7 +36,7 @@
             <MinusIcon class="size-4" />
           </button>
           <input
-            class="join-item input grow w-[4rem]"
+            class="join-item input w-[4rem] grow"
             :value="prettyScale"
             @change="onChange"
           />
@@ -73,15 +73,15 @@ const MIN = 0.01;
 const MAX = 4;
 const STEP = 0.01;
 
-function emitChange(scale) {
+function emitChange(scale: number) {
   const validScale = Math.min(Math.max(scale, MIN), MAX);
   emit("change", validScale);
 }
 
-function onChange(event) {
-  const scale = Number(event.target.value);
+function onChange(event: Event) {
+  const scale = Number((event.target as HTMLInputElement).value);
   if (isNaN(scale)) {
-    event.target.value = prettyScale.value;
+    (event.target as HTMLInputElement).value = prettyScale.value.toString();
     return;
   }
   emitChange(scale / 100);

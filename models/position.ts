@@ -1,1 +1,3 @@
-export interface Position {}
+export interface Position {
+  value: number;
+}

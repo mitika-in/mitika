@@ -1,11 +1,15 @@
 <template>
-  <div class="flex flex-col justify-between text-center">
-    <h1 class="font-bold truncate">
-      {{ title }}
-    </h1>
-    <span class="italic truncate">
-      {{ subtitle }}
-    </span>
+  <div class="flex flex-col text-center">
+    <div class="flex flex-row">
+      <h1 class="w-0 grow truncate font-bold">
+        {{ title }}
+      </h1>
+    </div>
+    <div class="flex flex-row">
+      <span class="w-0 grow truncate italic">
+        {{ subtitle }}
+      </span>
+    </div>
   </div>
 </template>
 <script setup lang="ts">

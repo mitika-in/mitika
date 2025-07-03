@@ -1,5 +1,5 @@
-import { StorageFileNotFoundError, type Storage } from "@/storages/storage";
 import { useLogger } from "@/logging";
+import { type Storage } from "@/storages/storage";
 
 const { debug } = useLogger("storage");
 
@@ -19,4 +19,4 @@ export async function useStorage(): Promise<Storage> {
   return storage;
 }
 
-export { StorageFileNotFoundError, type Storage };
+export { type Storage };

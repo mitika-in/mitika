@@ -1,8 +1,8 @@
 <template>
-  <div class="flex flex-col gap-2 items-center justify-center">
+  <div class="flex flex-col items-center justify-center gap-2">
     <template v-if="compact != true">
       <XCircleIcon
-        v-if="type == StatusType.ERROR"
+        v-if="type == StatusType.Error"
         class="size-20"
       />
       <InfoIcon
@@ -10,7 +10,7 @@
         class="size-20"
       />
     </template>
-    <h2 class="font-bold text-xl">
+    <h2 class="text-xl font-bold">
       {{ title }}
     </h2>
     <p>
@@ -26,10 +26,7 @@
   </div>
 </template>
 <script lang="ts" setup>
-enum StatusType {
-  ERROR = "error",
-  INFO = "info",
-}
+import { StatusType } from "@/components/statusType";
 
 interface Props {
   type: StatusType;

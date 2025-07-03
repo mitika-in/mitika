@@ -20,16 +20,27 @@ defineProps<Props>();
 
 const dialog = useTemplateRef("dialog");
 
-async function hide() {
-  dialog.value.close();
+function isShown(): boolean {
+  return dialog.value!.open;
 }
 
-async function show() {
-  dialog.value.showModal();
+function hide() {
+  dialog.value!.close();
+}
+
+function show() {
+  dialog.value!.showModal();
+}
+
+function toggle() {
+  if (isShown()) hide();
+  else show();
 }
 
 defineExpose({
+  isShown,
   hide,
   show,
+  toggle,
 });
 </script>

@@ -4,8 +4,8 @@ import { type Item, ItemType } from "@/models/item";
 import { type Position } from "@/models/position";
 
 export interface EbookColor {
-  background: number;
   foreground: number;
+  background: number;
 }
 
 export enum EbookLayout {
@@ -15,17 +15,16 @@ export enum EbookLayout {
 }
 
 export interface EbookPosition extends Position {
-  id: string;
   name: string;
   x: number;
   y: number;
 }
 
 export interface Ebook extends Item {
+  position: EbookPosition;
   color: EbookColor;
   flip: boolean;
   layout: EbookLayout;
-  position: EbookPosition;
   rotate: number;
   scale: number;
 }
@@ -38,7 +37,7 @@ export function createEbook(parentId: string, name: string, file: File): Ebook {
     name,
     file,
     order: 1,
-    position: { id: "", name: "1", x: 0, y: 0 },
+    position: { name: "0", value: 0, x: 0, y: 0 },
     openingFirstTime: true,
     color: ColorScheme.Original,
     flip: false,

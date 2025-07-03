@@ -1,7 +1,9 @@
+import { Database } from "@/database/database";
+import { DatabaseEvent } from "@/database/databaseEvent";
 import { useLogger } from "@/logging";
-import { ItemType, type Mark, type Note, type Item, type Book } from "@/models";
+import { type Mark, type Note, type Item, type Book } from "@/models";
 
-const { f, debug } = useLogger("database");
+const { f, debug } = useLogger("indexedDb");
 
 const DATABSE_NAME = "main";
 const DATABASE_VERSION = 1;
@@ -35,6 +37,8 @@ function setupDatabase(database: IDBDatabase) {
   items.createIndex("parentIndex", "parentId", indexOptions);
 
   database.createObjectStore("books", storeOptions);
+
+  database.createObjectStore("settings", { keyPath: "key" });
 }
 
 /* upgradeN means upgrade from vN-1 to vN. */
@@ -60,7 +64,7 @@ function upgrade(database: IDBDatabase, oldVersion: number) {
   }
 }
 
-export class Database {
+export class IndexedDb extends Database {
   private database: IDBDatabase | null = null;
 
   async open() {
@@ -97,23 +101,16 @@ export class Database {
     this.database = null;
   }
 
-  private async upsert<T extends { id: string }>(obj: T, storeName: string): Promise<T> {
+  private async put<T extends { id: string }>(obj: T, storeName: string) {
+    debug(f`Puting ${obj} to ${storeName}`);
     const transaction = this.database!.transaction(storeName, "readwrite");
     const store = transaction.objectStore(storeName);
     store.put(obj);
     await promisifyTransaction(transaction);
-    return obj;
-  }
-
-  private async add<T extends { id: string }>(obj: T, storeName: string): Promise<T> {
-    debug(f`Adding ${obj} to ${storeName}`);
-
-    return this.upsert(obj, storeName);
   }
 
   private async get<T>(id: string, storeName: string): Promise<T> {
-    debug(f`Getting id=${id} from ${storeName}`);
-
+    debug(f`Getting id: ${id} from ${storeName}`);
     const transaction = this.database!.transaction(storeName, "readonly");
     const store = transaction.objectStore(storeName);
     const req = store.get(id!);
@@ -123,8 +120,7 @@ export class Database {
   }
 
   private async getAll<T>(storeName: string, parentId: string | null = null): Promise<T[]> {
-    debug(f`Getting all parentId=${parentId} from ${storeName}`);
-
+    debug(f`Getting all ${storeName} of parentId: ${parentId}`);
     const transaction = this.database!.transaction(storeName, "readonly");
     const store = transaction.objectStore(storeName);
     let req;
@@ -138,85 +134,73 @@ export class Database {
     return req.result;
   }
 
-  private async put<T extends { id: string }>(obj: T, storeName: string): Promise<T> {
-    debug(f`Putting ${obj} to ${storeName}`);
-
-    return this.upsert(obj, storeName);
-  }
-
   private async del<T extends { id: string }>(obj: T, storeName: string) {
     debug(f`Deleting ${obj} from ${storeName}`);
-
     const transaction = this.database!.transaction(storeName, "readwrite");
     const store = transaction.objectStore(storeName);
     store.delete(obj.id!);
     await promisifyTransaction(transaction);
   }
 
-  async addMark(mark: Mark): Promise<Mark> {
-    return this.add(mark, "marks");
+  async putMark(mark: Mark) {
+    await this.put(mark, "marks");
+
+    this.emit(DatabaseEvent.Marks, null);
   }
 
   async getMark(id: string): Promise<Mark> {
     return this.get(id, "marks");
   }
 
-  async getMarks(parentId: string): Promise<Mark[]> {
-    return await this.getAll("marks", parentId);
-  }
-
-  async putMark(mark: Mark): Promise<Mark> {
-    return this.put(mark, "marks");
+  async getMarks(parentId: string | null): Promise<Mark[]> {
+    const marks: Mark[] = await this.getAll("marks", parentId);
+    return marks.sort((a, b) => a.position.value - b.position.value);
   }
 
   async delMark(mark: Mark) {
     await this.del(mark, "marks");
+
+    this.emit(DatabaseEvent.Marks, null);
   }
 
-  async addNote(note: Note): Promise<Note> {
-    return this.add(note, "notes");
+  async putNote(note: Note) {
+    await this.put(note, "notes");
+
+    this.emit(DatabaseEvent.Notes, null);
   }
 
   async getNote(id: string): Promise<Note> {
     return this.get(id, "notes");
   }
 
-  async getNotes(parentId: string): Promise<Note[]> {
-    return this.getAll("notes", parentId);
-  }
-
-  async putNote(note: Note): Promise<Note> {
-    return this.put(note, "notes");
+  async getNotes(parentId: string | null): Promise<Note[]> {
+    const notes: Note[] = await this.getAll("notes", parentId);
+    return notes.sort((a, b) => a.position.value - b.position.value);
   }
 
   async delNote(note: Note) {
     await this.del(note, "notes");
+
+    this.emit(DatabaseEvent.Notes, null);
   }
 
-  async addItem(item: Item): Promise<Item> {
-    return this.add(item, "items");
+  async putItem(item: Item) {
+    await this.put(item, "items");
+
+    this.emit(DatabaseEvent.Items, null);
   }
 
   async getItem(id: string): Promise<Item> {
     return this.get(id, "items");
   }
 
-  async getItems(parentId: string, type: ItemType | null): Promise<Item[]> {
-    debug(f`Getting all parentId=${parentId} and type=${type} from items`);
-
+  async getItems(parentId: string | null): Promise<Item[]> {
     const items: Item[] = await this.getAll("items", parentId);
-    return items
-      .filter((item) => type == null || item.type == type)
-      .sort((a, b) => a.order - b.order);
-  }
-
-  async putItem(item: Item): Promise<Item> {
-    return this.put(item, "items");
+    return items;
   }
 
   async delItem(item: Item) {
     debug(f`Deleting ${item} from items`);
-
     const transaction = this.database!.transaction(["marks", "notes", "items"], "readwrite");
     for (const storeName of ["marks", "notes"]) {
       const store = transaction.objectStore(storeName);
@@ -233,17 +217,17 @@ export class Database {
     const store = transaction.objectStore("items");
     store.delete(item.id!);
     await promisifyTransaction(transaction);
+
+    this.emit(DatabaseEvent.Items, null);
   }
 
   async updateItems(parentId: string, newItems: Item[], oldItems: Item[], delItems: Item[]) {
-    debug(f`Updating items of parentId=${parentId}`);
-    debug(f`  newItems=${newItems}`);
-    debug(f`  oldItems=${oldItems}`);
-    debug(f`  delItems=${delItems}`);
-
+    debug(f`Updating items of parentId: ${parentId}`);
+    debug(f`  newItems: ${newItems}`);
+    debug(f`  oldItems: ${oldItems}`);
+    debug(f`  delItems: ${delItems}`);
     const transaction = this.database!.transaction(["marks", "notes", "items"], "readwrite");
     const items = transaction.objectStore("items");
-
     const setDelItems = new Set(delItems.map((item) => item.id!));
     const index = items.index("parentIndex");
     const req = index.openKeyCursor(parentId);
@@ -274,10 +258,14 @@ export class Database {
     }
 
     await promisifyTransaction(transaction);
+
+    this.emit(DatabaseEvent.Items, null);
   }
 
-  async addBook(book: Book): Promise<Book> {
-    return this.add(book, "books");
+  async putBook(book: Book) {
+    await this.put(book, "books");
+
+    this.emit(DatabaseEvent.Books, null);
   }
 
   async getBook(id: string): Promise<Book> {
@@ -288,13 +276,8 @@ export class Database {
     return this.getAll("books");
   }
 
-  async putBook(book: Book): Promise<Book> {
-    return this.put(book, "books");
-  }
-
   async delBook(book: Book) {
     debug(f`Deleting ${book} from books`);
-
     const transaction = this.database!.transaction(
       ["marks", "notes", "items", "books"],
       "readwrite",
@@ -324,15 +307,25 @@ export class Database {
     const books = transaction.objectStore("books");
     books.delete(book.id!);
     await promisifyTransaction(transaction);
-  }
-}
 
-let database: Database;
-
-export async function useDatabase(): Promise<Database> {
-  if (database == null) {
-    database = new Database();
-    await database.open();
+    this.emit(DatabaseEvent.Books, null);
   }
-  return database;
+
+  async getProperty(key: string, fallback: any): Promise<any> {
+    debug(`Getting key: ${key}`);
+    const transaction = this.database!.transaction("settings", "readonly");
+    const store = transaction.objectStore("settings");
+    const req = store.get(key);
+    await promisifyTransaction(transaction);
+    if (req.result != null) return req.result.value;
+    return fallback;
+  }
+
+  async setProperty(key: string, value: any): Promise<void> {
+    debug(f`Setting key: ${key} to value: ${value}`);
+    const transaction = this.database!.transaction("settings", "readwrite");
+    const store = transaction.objectStore("settings");
+    store.put({ key, value });
+    await promisifyTransaction(transaction);
+  }
 }

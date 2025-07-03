@@ -1,10 +1,14 @@
 <template>
-  <div class="flex flex-col">
-    <NuxtPage />
-    <MessageDialog ref="dialog" />
+  <div class="flex h-dvh flex-col">
+    <NuxtPage class="grow" />
   </div>
 </template>
 <script setup lang="ts">
-const dialog = useTemplateRef("dialog");
-provide("dialog", dialog);
+import { useLogger } from "@/logging";
+
+const { f, error } = useLogger("app");
+
+useRuntimeHook("app:error", (err) => {
+  error(err);
+});
 </script>

@@ -1,10 +1,7 @@
 <template>
-  <div
-    v-if="audiobook"
-    class="flex flex-col gap-4"
-  >
-    <div class="flex flex-row gap-4 items-center">
-      <span>{{ formatTime(audiobook.position.value, hoursLength) }}</span>
+  <div class="flex flex-col gap-4">
+    <div class="flex flex-row items-center gap-4">
+      <span>{{ formatToTimestamp(audiobook.position.value, hoursLength) }}</span>
       <input
         class="range grow"
         :max="audiobook.length"
@@ -14,11 +11,9 @@
         :value="audiobook.position.value"
         @change="onPositionChange"
       />
-      <span>
-        {{ formatTime(audiobook.length, hoursLength) }}
-      </span>
+      <span>{{ formatToTimestamp(audiobook.length, hoursLength) }}</span>
     </div>
-    <div class="flex flex-row gap-4 justify-center items-center join">
+    <div class="join flex flex-row items-center justify-center gap-4">
       <button class="join-item btn btn-ghost">
         <RewindIcon class="size-4" />
       </button>
@@ -29,7 +24,7 @@
         <input
           :checked="playing"
           type="checkbox"
-          @change="onStateChange"
+          @change="onPlayingChange"
         />
         <PauseIcon class="swap-on size-4" />
         <PlayIcon class="swap-off size-4" />
@@ -41,152 +36,226 @@
         <FastForwardIcon class="size-4" />
       </button>
     </div>
-    <div class="flex flex-row gap-4 items-center">
-      <button class="btn btn-ghost">
-        <BookmarkIcon class="size-4" />
-      </button>
-      <AudiobookRateButton
-        :rate="audiobook.rate"
-        @change="onRateChange"
-      />
+    <footer class="flex flex-col gap-4">
+      <div class="flex flex-row gap-4 self-center">
+        <button
+          class="btn btn-ghost"
+          @click="outlinesDialog!.toggle()"
+        >
+          <ListIcon class="size-4" />
+        </button>
+        <MarkButton :item="audiobook" />
+        <AudiobookRateButton
+          :rate="audiobook.rate"
+          @change="onRateChange"
+        />
+        <AudiobookVolumeButton
+          :volume="audiobook.volume"
+          @change="onVolumeChange"
+        />
+        <Dropdown popoverId="audiobookPlayerPo">
+          <template #button>
+            <MoreVerticalIcon class="size-4" />
+          </template>
+          <template #content>
+            <ul class="menu bg-base-100 w-64 rounded-sm shadow-sm">
+              <li>
+                <button @click="onAddNoteClick">
+                  {{ $t("Add note") }}
+                </button>
+              </li>
+              <li>
+                <button @click="onMarksClick">
+                  {{ $t("Marks") }}
+                </button>
+              </li>
+              <li>
+                <button @click="onNotesClick">
+                  {{ $t("Notes") }}
+                </button>
+              </li>
+            </ul>
+          </template>
+        </Dropdown>
+      </div>
       <TitleBar
-        class="grow"
         :subtitle="audiobook.file.name"
         title=""
       />
-      <AudiobookVolumeButton
-        :volume="audiobook.volume"
-        @change="onVolumeChange"
-      />
-      <button class="btn btn-ghost">
-        <MoreVerticalIcon class="size-4" />
-      </button>
-    </div>
+    </footer>
+    <AddNoteDialog
+      ref="addNoteDialog"
+      :item="audiobook"
+    />
+
+    <MarksDialog
+      ref="marksDialog"
+      :item="audiobook"
+      @openMark="onOpenMark"
+    />
+    <NotesDialog
+      ref="notesDialog"
+      :item="audiobook"
+      @openNote="onOpenNote"
+    />
+    <OutlinesDialog
+      ref="outlinesDialog"
+      :item="audiobook"
+      :outlines="outlines"
+      @openOutline="onOpenOutline"
+    />
   </div>
 </template>
 <script setup lang="ts">
+import { useAudiobookBackend, type AudiobookBackend } from "@/backends";
+import { type Metadata } from "@/backends/metadata";
+import { type Outline } from "@/backends/outline";
 import { useDatabase } from "@/database";
-import { useAudiobookBackend } from "@/backends/index";
-import { Outline } from "@/backends/outline";
-import { Audiobook } from "@/models";
-import { useStorage } from "@/storages";
 import { useLogger } from "@/logging";
+import { type Audiobook, type Mark, type Note, type Position } from "@/models";
+import { useSource } from "@/sources";
+import { formatToTimestamp } from "@/utils";
 
-const { f, debug } = useLogger("audiobook-player");
+const { f, debug } = useLogger("audiobookPlayer");
+
+interface Props {
+  audiobook: Audiobook;
+}
 
 interface Emits {
-  metadata: [name: string, authors: string[], cover: Blob | null];
-  outlines: [outlines: Outline[]];
+  metadata: [metadata: Metadata];
 }
 
+const { audiobook } = defineProps<Props>();
 const emit = defineEmits<Emits>();
 
-const audiobook = ref(null);
+const database = await useDatabase();
+const source = await useSource();
+
+const outlines: Ref<Outline[]> = ref([]);
 const playing = ref(false);
-let hoursLength = ref(2);
+let backend: AudiobookBackend | null = null;
 
-let backend = null;
-let database = null;
-let storage = null;
+const hoursLength = computed(() => Math.floor(Math.log10(audiobook.length / 3600) + 1));
 
-async function open(item: Audiobook) {
-  debug(f`Opening: ${item}`);
-  audiobook.value = item;
+const addNoteDialog = useTemplateRef("addNoteDialog");
+const marksDialog = useTemplateRef("marksDialog");
+const notesDialog = useTemplateRef("notesDialog");
+const outlinesDialog = useTemplateRef("outlinesDialog");
 
-  const ctor = useAudiobookBackend(item.file.type);
-  debug(f`Using backend: ${ctor.name}`);
-
-  const blob = await storage.readFile(item.file);
-  backend = new ctor();
-  await backend.open(blob, { positionCb: onPositionChanged, endedCb: onEnd });
-
-  audiobook.value.length = await backend.getLength();
-  hoursLength.value = Math.floor(Math.log10(audiobook.value.length / 3600) + 1);
-
-  if (audiobook.value.openingFirstTime) audiobook.value.openingFirstTime = false;
-  else await backend.setPosition(audiobook.value.position);
-
-  await onRateChange(audiobook.value.rate);
-  await onVolumeChange(audiobook.value.volume);
-
-  emit("metadata", await backend.getName(), await backend.getAuthors(), await backend.getCover());
-  emit("outlines", await backend.getOutlines());
+async function onOpenMark(mark: Mark) {
+  debug(`Opening mark: ${mark.name}`);
+  await backend!.setPosition(mark.position);
 }
 
-async function close() {
-  if (!backend) return;
-
-  debug(f`Closing: ${audiobook.value}`);
-
-  playing.value = false;
-
-  await backend.close();
-  backend = null;
-
-  await database.putItem(toRaw(audiobook.value));
-  audiobook.value = null;
+async function onOpenNote(note: Note) {
+  debug(`Opening note: ${note.name}`);
+  await backend!.setPosition(note.position);
 }
 
-defineExpose({ open, close });
+async function onOpenOutline(outline: Outline) {
+  debug(`Opening outline: ${outline.name}`);
+  await backend!.setPosition(outline.position);
+}
 
-database = await useDatabase();
-storage = await useStorage();
-
-onUnmounted(async () => {
-  await close();
-});
-
-async function onPositionChanged(position) {
-  audiobook.value.position = position;
+async function onPositionChanged(position: Position) {
+  audiobook!.position = position;
 }
 
 async function onEnd() {
   debug(`Playback ended`);
   playing.value = false;
-  await backend.pause();
-  await backend.setPosition({ value: 0 });
+  await backend!.pause();
+  await backend!.setPosition({ value: 0 });
 }
 
-async function onPositionChange(event) {
-  debug(`Changing to position.value: ${event.target.value}`);
-  await backend.setPosition({ value: event.target.value });
+async function onPositionChange(event: Event) {
+  const value = Number((event.target as HTMLInputElement).value);
+  debug(`Changing to position: ${value}`);
+  await backend!.setPosition({ value });
 }
 
 async function onRateChange(rate: number) {
   debug(`Changing to rate: ${rate}`);
-  await backend.setRate(rate);
-  audiobook.value.rate = rate;
+  await backend!.setRate(rate);
+  audiobook.rate = rate;
 }
 
-async function onStateChange() {
+async function onPlayingChange() {
   if (playing.value) {
     debug("Pausing playback");
-    await backend.pause();
+    await backend!.pause();
   } else {
     debug("Resuming playback");
-    await backend.play();
+    await backend!.play();
   }
   playing.value = !playing.value;
 }
 
 async function onVolumeChange(volume: number) {
   debug(`Changing to volume: ${volume}`);
-  await backend.setVolume(volume);
-  audiobook.value.volume = volume;
+  await backend!.setVolume(volume);
+  audiobook.volume = volume;
 }
 
-function formatTime(value: number, hoursLength: number): string {
-  let delta = value;
-  const hours = Math.floor(delta / 3600);
-  delta = delta % 3600;
-  const minutes = Math.floor(delta / 60);
-  delta = delta % 60;
-  const seconds = Math.floor(delta);
-
-  const hoursStr = hours.toString().padStart(hoursLength, 0);
-  const minsStr = minutes.toString().padStart(2, "0");
-  const secsStr = seconds.toString().padStart(2, "0");
-
-  return `${hoursStr}:${minsStr}:${secsStr}`;
+function onAddNoteClick() {
+  addNoteDialog.value!.show();
 }
+
+function onMarksClick() {
+  marksDialog.value!.show();
+}
+
+function onNotesClick() {
+  notesDialog.value!.show();
+}
+
+async function open(audiobook: Audiobook) {
+  debug(f`Opening: ${audiobook}`);
+  const ctor = useAudiobookBackend(audiobook.file.type);
+  debug(f`Using backend: ${ctor.name}`);
+  if (audiobook.openingFirstTime) {
+    audiobook.openingFirstTime = false;
+  }
+  backend = new ctor(
+    {
+      passwordCb: console.error,
+      positionCb: onPositionChanged,
+      endedCb: onEnd,
+    },
+    {
+      position: audiobook.position,
+      rate: audiobook.rate,
+      volume: audiobook.volume,
+    },
+  );
+  const blob = await source.readFile(audiobook.file);
+  await backend!.open(blob, audiobook.file.type);
+  audiobook.length = await backend!.getLength();
+  outlines.value = await backend!.getOutlines();
+  emit("metadata", await backend!.getMetadata());
+}
+
+async function close(audiobook: Audiobook) {
+  debug(f`Closing: ${audiobook}`);
+  playing.value = false;
+  await backend!.close();
+  backend = null;
+  await database.putItem(toRaw(audiobook));
+}
+
+watch(
+  () => audiobook,
+  async (newAudiobook, oldAudiobook) => {
+    if (oldAudiobook) {
+      await close(oldAudiobook);
+    }
+    await open(newAudiobook);
+  },
+  { immediate: true },
+);
+
+onUnmounted(async () => {
+  await close(audiobook);
+});
 </script>

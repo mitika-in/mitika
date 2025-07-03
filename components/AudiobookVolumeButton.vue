@@ -1,10 +1,21 @@
 <template>
-  <Dropdown :ghostBtn="false">
+  <Dropdown popoverId="audiobookVolumeButtonPo">
     <template #button>
-      {{ `${prettyVolume}%` }}
+      <VolumeXIcon
+        v-if="volume == 0"
+        class="size-4"
+      />
+      <Volume1Icon
+        v-else-if="volume <= 0.5"
+        class="size-4"
+      />
+      <Volume2Icon
+        v-else
+        class="size-4"
+      />
     </template>
     <template #content>
-      <div class="flex flex-col gap-2 bg-base-200 rounded-box w-64 p-2 shadow-sm">
+      <div class="bg-base-200 flex w-64 flex-col gap-2 rounded-sm p-2 shadow-sm">
         <ul class="menu w-full">
           <li>
             <button @click="emitChange(0)">
@@ -41,7 +52,7 @@
             <MinusIcon class="size-4" />
           </button>
           <input
-            class="join-item input grow w-[4rem]"
+            class="join-item input w-[4rem] grow"
             :value="prettyVolume"
             @change="onChange"
           />
@@ -76,15 +87,16 @@ const MAX = 1;
 
 const prettyVolume = computed(() => Math.floor(volume * 100));
 
-function emitChange(volume) {
+function emitChange(volume: number) {
   const validVolume = Math.min(Math.max(volume, MIN), MAX);
   emit("change", validVolume);
 }
 
-function onChange(event) {
-  const volume = Math.floor(Number(event.target.value));
+function onChange(event: Event) {
+  const inputEl = event.target as HTMLInputElement;
+  const volume = Math.floor(Number(inputEl.value));
   if (isNaN(volume)) {
-    event.target.value = prettyVolume.value;
+    inputEl.value = prettyVolume.value.toString();
     return;
   }
   emitChange(volume / 100);

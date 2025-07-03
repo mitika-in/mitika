@@ -8,7 +8,7 @@ export default defineNuxtConfig({
   },
   css: ["~/assets/css/style.css"],
   ssr: false,
-  devtools: { enabled: true },
+  devtools: { enabled: false },
   i18n: {
     locales: [
       {
@@ -22,5 +22,8 @@ export default defineNuxtConfig({
   modules: ["@nuxtjs/i18n"],
   vite: {
     plugins: [tailwindcss()],
+    optimizeDeps: {
+      exclude: ["mupdf"], // Exclude mupdf from pre-bundling
+    },
   },
 });

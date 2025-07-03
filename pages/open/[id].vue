@@ -1,84 +1,120 @@
 <template>
-  <div class="drawer">
-    <input
-      class="drawer-toggle"
-      id="sidebar"
-      type="checkbox"
-    />
-    <div class="drawer-content flex flex-col h-dvh gap-4 p-4">
-      <header class="flex flex-row gap-4 items-center">
-        <label
-          class="btn btn-ghost drawer-button"
-          for="sidebar"
-        >
-          <SidebarIcon class="size-4" />
-        </label>
-        <TitleBar
-          class="grow"
-          :subtitle="book.authors.join(', ')"
-          :title="book.name"
-        />
-        <Dropdown>
-          <template #button>
-            <MenuIcon class="size-4" />
-          </template>
-          <template #content>
-            <ul class="menu rounded-box bg-base-100 w-64 shadow-sm">
-              <li>
-                <button @click="onEdit">
-                  {{ $t("Edit") }}
-                </button>
-              </li>
-              <li>
-                <button @click="onHome">
-                  {{ $t("Home") }}
-                </button>
-              </li>
-              <li>
-                <button>
-                  {{ $t("Help") }}
-                </button>
-              </li>
-              <li>
-                <button>
-                  {{ $t("About {name}", { name: Constants.NAME }) }}
-                </button>
-              </li>
-            </ul>
-          </template>
-        </Dropdown>
-      </header>
-      <EbookViewer
-        ref="ebook-viewer"
+  <div
+    v-if="book"
+    class="flex h-dvh flex-col gap-4 p-4"
+  >
+    <header class="flex flex-row gap-4">
+      <button
+        class="btn btn-ghost"
+        :disabled="book == null"
+        @click="itemsDialog!.toggle()"
+      >
+        <FileIcon class="size-4" />
+      </button>
+      <TitleBar
         class="grow"
-        @metadata="onMetadata"
-        @outlines="async (o) => await onOutlines(ItemType.Ebook, o)"
+        :subtitle="book.authors.join(', ')"
+        :title="book.name"
       />
-      <AudiobookPlayer
-        ref="audiobook-player"
-        @metadata="onMetadata"
-        @outlines="async (o) => await onOutlines(ItemType.Audiobook, o)"
+      <Dropdown popoverId="openPo">
+        <template #button>
+          <MenuIcon class="size-4" />
+        </template>
+        <template #content>
+          <ul class="menu bg-base-100 w-64 rounded-sm shadow-sm">
+            <li v-if="audiobook && ebook">
+              <details>
+                <summary>
+                  {{ $t("View") }}
+                </summary>
+                <ul>
+                  <li>
+                    <label>
+                      <input
+                        v-model="book.openAudiobook"
+                        type="checkbox"
+                        class="checkbox"
+                      />
+                      {{ $t("Audiobook") }}
+                    </label>
+                  </li>
+                  <li>
+                    <label>
+                      <input
+                        v-model="book.openEbook"
+                        type="checkbox"
+                        class="checkbox"
+                      />
+                      {{ $t("Ebook") }}
+                    </label>
+                  </li>
+                </ul>
+              </details>
+            </li>
+            <li v-if="book">
+              <NuxtLink :to="`/edit/${book.id}`">
+                {{ $t("Edit") }}
+              </NuxtLink>
+            </li>
+            <li>
+              <NuxtLink to="/">
+                {{ $t("Home") }}
+              </NuxtLink>
+            </li>
+            <li>
+              <NuxtLink to="/logs">
+                {{ $t("Logs") }}
+              </NuxtLink>
+            </li>
+            <li>
+              <button>
+                {{ $t("Help") }}
+              </button>
+            </li>
+            <li>
+              <button @click="aboutDialog!.toggle()">
+                {{ $t("About {name}", { name: Constants.NAME }) }}
+              </button>
+            </li>
+          </ul>
+        </template>
+      </Dropdown>
+    </header>
+    <figure
+      v-if="!ebook || !book.openEbook"
+      class="flex h-0 grow place-content-center"
+    >
+      <img
+        :alt="book.name"
+        :src="coverUrl ? coverUrl : './fallback.webp'"
+        class="object-scale-down"
       />
-    </div>
-    <aside class="drawer-side">
-      <label
-        aria-label="Close sidebar"
-        class="drawer-overlay"
-        for="sidebar"
-      />
-      <Navigator
-        ref="navigator"
-        @openItem="open"
-      />
-    </aside>
+    </figure>
+    <EbookViewer
+      v-if="ebook && book.openEbook"
+      :ebook="ebook"
+      class="grow"
+      @metadata="onMetadata"
+    />
+    <AudiobookPlayer
+      v-if="audiobook && book.openAudiobook"
+      :audiobook="audiobook"
+      @metadata="onMetadata"
+    />
+    <AboutDialog ref="aboutDialog" />
+    <ItemsDialog
+      ref="itemsDialog"
+      :book="book"
+      @openItem="onOpenItem"
+    />
   </div>
 </template>
 <script lang="ts" setup>
-import { useDatabase } from "@/database";
+import type { Metadata } from "@/backends/metadata";
 import { Constants } from "@/constants";
-import { ItemType, Item } from "@/models";
+import { useDatabase } from "@/database";
 import { useLogger } from "@/logging";
-import { Outline } from "@/backends/outline";
+import { ItemType, type Audiobook, type Ebook, type Item } from "@/models";
 import { useStorage } from "@/storages";
 
 const route = useRoute();
@@ -87,82 +123,66 @@ const storage = await useStorage();
 
 const { f, debug } = useLogger("open");
 
-const book = ref(await database.getBook(route.params.id));
-const audiobook = ref(null);
-const ebook = ref(null);
+const book = ref(await database.getBook(route.params.id as string));
+const cover = ref(await storage.read(`/covers/${book.value.id}.png`));
+const audiobook: Ref<Audiobook | null> = ref(null);
+const ebook: Ref<Ebook | null> = ref(null);
 
-const viewer = useTemplateRef("ebook-viewer");
-const player = useTemplateRef("audiobook-player");
-const navigator = useTemplateRef("navigator");
+const aboutDialog = useTemplateRef("aboutDialog");
+const itemsDialog = useTemplateRef("itemsDialog");
 
-async function open(item: Item) {
-  let component;
-  let openItem;
+const coverUrl: ComputedRef<string | null> = computed((oldCoverUrl) => {
+  if (oldCoverUrl) URL.revokeObjectURL(oldCoverUrl as string);
+  if (!cover.value) return null;
+  return URL.createObjectURL(cover.value);
+});
 
-  debug(f`Opening item: ${item}`);
-
+async function onOpenItem(item: Item, forceOpen: boolean) {
+  debug(f`Opening item: ${item}, force: ${forceOpen}`);
   if (item.type == ItemType.Audiobook) {
-    component = player.value;
-    openItem = audiobook;
+    audiobook.value = item as Audiobook;
+    book.value.openAudiobook = book.value.openAudiobook || forceOpen;
   } else if (item.type == ItemType.Ebook) {
-    component = viewer.value;
-    openItem = ebook;
+    ebook.value = item as Ebook;
+    book.value.openEbook = book.value.openEbook || forceOpen;
   } else {
     throw new Error(`Unknown item type: ${item.type}`);
   }
-
-  if (openItem.value) {
-    debug(f`Closing already open item: ${openItem}`);
-    await component.close();
-  }
-
-  openItem.value = item;
-  await component.open(openItem.value);
 }
 
-async function onEdit() {
-  await navigateTo(`/edit/${book.value.id}`);
-}
+function onAboutClick() {}
 
-async function onHome() {
-  await navigateTo("/");
-}
+async function onMetadata(metadata: Metadata) {
+  debug(f`Got metadata: ${metadata}`);
 
-async function onMetadata(name: string, authors: string[], cover: Blob | null) {
-  debug(`Got metadata; name: ${name}, authors: ${authors}, cover: ${cover}`);
-
-  if (name.length != 0 && book.value.name.length == 0) {
+  if (metadata.name.length != 0 && book.value.name.length == 0) {
     debug("Setting name from metadata");
-    book.value.name = name;
+    book.value.name = metadata.name;
   }
 
-  if (authors.length != 0 && book.value.authors.length == 0) {
+  if (metadata.authors.length != 0 && book.value.authors.length == 0) {
     debug("Setting authors from metadata");
-    book.value.authors = authors;
+    book.value.authors = metadata.authors;
   }
 
-  if (cover && !(await storage.readCache(`${book.value.id}_cover.png`))) {
+  if (metadata.cover && !cover.value) {
     debug("Setting cover from metadata");
-    await storage.writeCache(`${book.value.id}_cover.png`, cover);
+    await storage.write(`/covers/${book.value.id}.png`, metadata.cover);
+    cover.value = metadata.cover;
   }
 }
-
-async function onOutlines(type: ItemType, outlines: Outline[]) {
-  await navigator.value.setOutlines(type, outlines);
-}
-
-onMounted(async () => {
-  await navigator.value.setBook(book.value);
-});
 
 onUnmounted(async () => {
   book.value.lastOpened = new Date();
+
   if (audiobook.value) {
     book.value.lastAudiobookId = audiobook.value.id;
   }
+
   if (ebook.value) {
     book.value.lastEbookId = ebook.value.id;
   }
+
   await database.putBook(toRaw(book.value));
 });
 </script>

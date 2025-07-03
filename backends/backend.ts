@@ -1,4 +1,4 @@
-import { type Position } from "@/models";
+import { type Metadata } from "@/backends/metadata";
 import { type Outline } from "@/backends/outline";
 
 export type PasswordRequiredCallback = (
@@ -6,19 +6,16 @@ export type PasswordRequiredCallback = (
   retry: boolean,
 ) => void;
 
-export type PositionChangedCallback = (position: Position) => void;
+export interface InitOptions {}
 
 export interface BackendOptions {
   passwordCb: PasswordRequiredCallback;
-  positionCb: PositionChangedCallback;
 }
 
 export abstract class Backend {
-  abstract open(blob: Blob, options: BackendOptions): Promise<void>;
+  constructor(backendOptions: BackendOptions, initOptions: InitOptions) {}
+  abstract open(blob: Blob, mimeType: string): Promise<void>;
   abstract close(): Promise<void>;
-  abstract getAuthors(): Promise<string[]>;
-  abstract getCover(): Promise<Blob | null>;
-  abstract getName(): Promise<string>;
+  abstract getMetadata(): Promise<Metadata>;
   abstract getOutlines(): Promise<Outline[]>;
-  abstract setPosition(position: Position): Promise<void>;
 }

@@ -21,9 +21,15 @@ export default defineNuxtConfig({
   },
   modules: ["@nuxtjs/i18n"],
   vite: {
+    build: {
+      target: "esnext",
+    },
     plugins: [tailwindcss()],
     optimizeDeps: {
       exclude: ["mupdf"], // Exclude mupdf from pre-bundling
+    },
+    worker: {
+      format: "es",
     },
   },
 });

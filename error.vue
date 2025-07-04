@@ -20,7 +20,7 @@
         >
         <NuxtLink
           class="btn btn-secondary w-full lg:w-64"
-          to="/console/logs"
+          to="/logs"
           >Logs</NuxtLink
         >
       </div>

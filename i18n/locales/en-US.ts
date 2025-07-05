@@ -31,6 +31,7 @@ export default {
   "Ebooks": "Ebooks",
   "Edit Book": "Edit Book",
   "Edit": "Edit",
+  "Editing {name}": "Editing {name}",
   "Empty list": "Empty list",
   "Fit height": "Fit height",
   "Fit page": "Fit page",

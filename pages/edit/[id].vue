@@ -248,4 +248,6 @@ async function onAddClick() {
 
   items.value.push(item);
 }
+
+useHead({ title: t("Editing {name}", { name: book.value.name }) });
 </script>

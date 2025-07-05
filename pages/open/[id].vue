@@ -1,12 +1,8 @@
 <template>
-  <div
-    v-if="book"
-    class="flex h-dvh flex-col gap-4 p-4"
-  >
+  <div class="flex h-dvh flex-col gap-4 p-4">
     <header class="flex flex-row gap-4">
       <button
         class="btn btn-ghost"
-        :disabled="book == null"
         @click="itemsDialog!.toggle()"
       >
         <FileIcon class="size-4" />
@@ -185,4 +181,6 @@ onUnmounted(async () => {
 
   await database.putBook(toRaw(book.value));
 });
+
+useHead({ title: book.value.name });
 </script>

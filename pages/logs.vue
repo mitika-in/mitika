@@ -168,4 +168,8 @@ function onDomainChange(domain: string) {
   if (domains.value.has(domain)) domains.value.delete(domain);
   else domains.value.add(domain);
 }
+
+useHead({
+  title: "Logs",
+});
 </script>

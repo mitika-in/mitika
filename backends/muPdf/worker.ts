@@ -192,7 +192,7 @@ class MuPdfWorker {
     const device = new mupdf.DrawDevice(matrix, pixmap);
     page.run(device, mupdf.Matrix.identity);
     pixmap.tint(color.foreground, color.background);
-    pixmap.setResolution(72 * 4, 72 * 4);
+    pixmap.setResolution(dpi, dpi);
     const imageData = new ImageData(pixmap.getPixels(), pixmap.getWidth(), pixmap.getHeight());
 
     pixmap.destroy();

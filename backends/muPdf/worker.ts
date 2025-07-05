@@ -182,9 +182,10 @@ class MuPdfWorker {
     return pages;
   }
 
-  getImageData(index: number, color: EbookColor, scale: number, dpi: number): ImageData {
+  getImageData(index: number, color: EbookColor, scale: number, dpr: number): ImageData {
     const page = this.doc.loadPage(index);
 
+    const dpi = (scale * 96 * dpr) / 72;
     const matrix = mupdf.Matrix.scale(scale, scale);
     const bbox = mupdf.Rect.transform(page.getBounds(), matrix);
     const pixmap = new mupdf.Pixmap(mupdf.ColorSpace.DeviceRGB, bbox, true);
@@ -192,7 +193,6 @@ class MuPdfWorker {
     const device = new mupdf.DrawDevice(matrix, pixmap);
     page.run(device, mupdf.Matrix.identity);
     pixmap.tint(color.foreground, color.background);
-    pixmap.setResolution(dpi, dpi);
     const imageData = new ImageData(pixmap.getPixels(), pixmap.getWidth(), pixmap.getHeight());
 
     pixmap.destroy();

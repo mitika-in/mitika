@@ -14,6 +14,8 @@ import type { EbookColor } from "@/models";
 
 const { f, debug } = useLogger("muPdfProxy");
 
+const DPI_FACTOR = 72;
+
 export class Proxy {
   private worker: Worker;
   private id: number;
@@ -118,6 +120,7 @@ export class Proxy {
       index,
       color,
       scale,
+      DPI_FACTOR * window.devicePixelRatio,
     ]);
     return imageData;
   }

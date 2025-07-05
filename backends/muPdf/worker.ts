@@ -182,7 +182,7 @@ class MuPdfWorker {
     return pages;
   }
 
-  getImageData(index: number, color: EbookColor, scale: number): ImageData {
+  getImageData(index: number, color: EbookColor, scale: number, dpi: number): ImageData {
     const page = this.doc.loadPage(index);
 
     const matrix = mupdf.Matrix.scale(scale, scale);
@@ -192,6 +192,7 @@ class MuPdfWorker {
     const device = new mupdf.DrawDevice(matrix, pixmap);
     page.run(device, mupdf.Matrix.identity);
     pixmap.tint(color.foreground, color.background);
+    pixmap.setResolution(72 * 4, 72 * 4);
     const imageData = new ImageData(pixmap.getPixels(), pixmap.getWidth(), pixmap.getHeight());
 
     pixmap.destroy();
@@ -302,7 +303,7 @@ self.onmessage = (message) => {
         data = worker!.getPages();
         break;
       case RequestType.GetImageData:
-        data = worker!.getImageData(args[0], args[1], args[2]);
+        data = worker!.getImageData(args[0], args[1], args[2], args[3]);
         break;
       case RequestType.GetNodes:
         data = worker!.getNodes(args[0]);

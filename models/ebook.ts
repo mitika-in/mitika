@@ -41,7 +41,7 @@ export function createEbook(parentId: string, name: string, file: File): Ebook {
     openingFirstTime: true,
     color: ColorScheme.Original,
     flip: false,
-    layout: EbookLayout.DualStart,
+    layout: EbookLayout.Single,
     rotate: 0,
     scale: 1,
   };

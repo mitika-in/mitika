@@ -263,6 +263,8 @@ import { useSource } from "@/sources";
 
 const { f, debug } = useLogger("ebookViewer");
 
+const DUAL_PAGE_WIDTH = 768;
+
 interface Props {
   ebook: Ebook;
 }
@@ -645,7 +647,7 @@ async function open(ebook: Ebook) {
 
   let fitScale = false;
   if (ebook.openingFirstTime) {
-    ebook.layout = EbookLayout.DualEnd;
+    if (window.screen.width >= DUAL_PAGE_WIDTH) ebook.layout = EbookLayout.DualEnd;
     fitScale = true;
     ebook.openingFirstTime = false;
   }

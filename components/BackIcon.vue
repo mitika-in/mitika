@@ -1,4 +1,4 @@
 <template>
-  <ArrowLeftIcon class="rtl:hidden" />
-  <ArrowRightIcon class="ltr:hidden" />
+  <ArrowLeftIcon class="size-4 rtl:hidden" />
+  <ArrowRightIcon class="size-4 ltr:hidden" />
 </template>

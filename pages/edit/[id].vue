@@ -5,7 +5,7 @@
         class="btn btn-ghost"
         @click="onBackClick"
       >
-        <BackIcon class="size-4" />
+        <BackIcon />
       </button>
       <TitleBar
         class="grow"

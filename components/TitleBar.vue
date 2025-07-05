@@ -5,7 +5,10 @@
         {{ title }}
       </h1>
     </div>
-    <div class="flex flex-row">
+    <div
+      v-if="subtitle.length != 0"
+      class="flex flex-row"
+    >
       <span class="w-0 grow truncate italic">
         {{ subtitle }}
       </span>

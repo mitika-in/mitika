@@ -89,7 +89,7 @@
           </ul>
         </template>
       </Dropdown>
-      <div class="flex h-0 grow flex-row overflow-scroll">
+      <div class="flex grow flex-row">
         <div class="w-0 grow overflow-scroll">
           <table class="table-zebra table-pin-rows table">
             <thead>

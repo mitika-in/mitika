@@ -81,7 +81,7 @@ export class Proxy {
   async open(buffer: ArrayBuffer, magic: string): Promise<void> {
     await this.waitForReady();
 
-    await this.request(RequestType.Open, [buffer, magic], [buffer]);
+    await this.request(RequestType.Open, [buffer, magic, window.devicePixelRatio || 1], [buffer]);
 
     let success: boolean = await this.request(RequestType.Authenticate, [""]);
     let retry = false;
@@ -118,7 +118,6 @@ export class Proxy {
       index,
       color,
       scale,
-      window.devicePixelRatio,
     ]);
     return imageData;
   }

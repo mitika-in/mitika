@@ -111,9 +111,11 @@ function lineToTextNode(line: {
 class MuPdfWorker {
   private doc: mupdf.Document;
   private epub: boolean = false;
+  private dpr: number = 1;
 
-  constructor(buffer: ArrayBuffer, magic: string) {
+  constructor(buffer: ArrayBuffer, magic: string, dpr: number) {
     this.doc = mupdf.Document.openDocument(buffer, magic);
+    this.dpr = dpr;
     if (magic == "application/epub+zip") this.epub = true;
   }
 
@@ -182,11 +184,10 @@ class MuPdfWorker {
     return pages;
   }
 
-  getImageData(index: number, color: EbookColor, scale: number, dpr: number): ImageData {
+  getImageData(index: number, color: EbookColor, scale: number): ImageData {
     const page = this.doc.loadPage(index);
 
-    const dpi = (scale * 96 * dpr) / 72;
-    const matrix = mupdf.Matrix.scale(scale, scale);
+    const matrix = mupdf.Matrix.scale(scale * this.dpr, scale * this.dpr);
     const bbox = mupdf.Rect.transform(page.getBounds(), matrix);
     const pixmap = new mupdf.Pixmap(mupdf.ColorSpace.DeviceRGB, bbox, true);
     pixmap.clear(255);
@@ -303,7 +304,7 @@ self.onmessage = (message) => {
         data = worker!.getPages();
         break;
       case RequestType.GetImageData:
-        data = worker!.getImageData(args[0], args[1], args[2], args[3]);
+        data = worker!.getImageData(args[0], args[1], args[2]);
         break;
       case RequestType.GetNodes:
         data = worker!.getNodes(args[0]);
@@ -313,7 +314,7 @@ self.onmessage = (message) => {
         transfer = [data.buffer];
         break;
       case RequestType.Open:
-        worker = new MuPdfWorker(args[0], args[1]);
+        worker = new MuPdfWorker(args[0], args[1], args[2]);
         break;
       case RequestType.Search:
         data = worker!.search(args[0], args[1]);

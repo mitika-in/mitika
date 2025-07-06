@@ -10,6 +10,7 @@
       <canvas
         ref="canvas"
         class="absolute"
+        :style="`width: ${width * scale}px; height: ${height * scale}px`"
       />
       <div
         class="absolute origin-top-left"

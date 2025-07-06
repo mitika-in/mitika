@@ -19,7 +19,7 @@ export function toTitleCase(str: string): string {
   let title = str.replaceAll(/-|_/g, " ");
   title = title
     .split(" ")
-    .map((x) => x[0].toLocaleUpperCase() + x.slice(1))
+    .map((x) => x.slice(0, 1).toLocaleUpperCase() + x.slice(1))
     .join(" ");
   return title;
 }

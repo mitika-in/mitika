@@ -1,170 +1,172 @@
 <template>
   <div class="relative flex flex-col gap-4">
-    <header
-      v-show="!focus"
-      class="flex flex-col gap-4"
+    <div
+      class="collapse"
+      :class="{ 'collapse-open': !focus }"
     >
-      <div class="flex flex-row gap-4 self-center">
-        <button
-          class="btn btn-ghost"
-          @click="outlinesDialog!.toggle()"
-        >
-          <ListIcon class="size-4" />
-        </button>
-        <MarkButton :item="ebook" />
-        <button
-          :class="{ 'btn-ghost': !searching }"
-          class="btn"
-          @click="onSearchClick"
-        >
-          <SearchIcon class="size-4" />
-        </button>
-        <EbookScaleButton
-          :resizePolicy="ebook.resizePolicy"
-          :scale="ebook.scale"
-          @change="onScaleChange"
-          @fitHeight="onScaleToFitHeight"
-          @fitPage="onScaleToFitPage"
-          @fitWidth="onScaleToFitWidth"
+      <header class="collapse-content flex flex-col gap-4">
+        <div class="flex flex-row gap-4 self-center">
+          <button
+            class="btn btn-ghost"
+            @click="outlinesDialog!.toggle()"
+          >
+            <ListIcon class="size-4" />
+          </button>
+          <MarkButton :item="ebook" />
+          <button
+            :class="{ 'btn-ghost': !searching }"
+            class="btn"
+            @click="onSearchClick"
+          >
+            <SearchIcon class="size-4" />
+          </button>
+          <EbookScaleButton
+            :resizePolicy="ebook.resizePolicy"
+            :scale="ebook.scale"
+            @change="onScaleChange"
+            @fitHeight="onScaleToFitHeight"
+            @fitPage="onScaleToFitPage"
+            @fitWidth="onScaleToFitWidth"
+          />
+          <Dropdown popoverId="ebookViewerPo">
+            <template #button>
+              <MoreVerticalIcon class="size-4" />
+            </template>
+            <template #content>
+              <ul class="menu bg-base-100 w-64 rounded-sm shadow-sm">
+                <li>
+                  <button @click="onAddNoteClick">
+                    {{ $t("Add note") }}
+                  </button>
+                </li>
+                <li>
+                  <button @click="onMarksClick">
+                    {{ $t("Marks") }}
+                  </button>
+                </li>
+                <li>
+                  <button @click="onNotesClick">
+                    {{ $t("Notes") }}
+                  </button>
+                </li>
+                <li>
+                  <details>
+                    <summary>
+                      {{ $t("Colors") }}
+                    </summary>
+                    <ul>
+                      <li v-for="entry of Object.entries(ColorScheme)">
+                        <button @click="onColorClick(entry[1])">
+                          {{ $t(entry[0]) }}
+                        </button>
+                      </li>
+                    </ul>
+                  </details>
+                </li>
+                <li>
+                  <label class="label">
+                    <input
+                      v-model="ebook.flip"
+                      class="checkbox"
+                      type="checkbox"
+                      @change="onFlipChange"
+                    />
+                    {{ $t("Flip") }}
+                  </label>
+                </li>
+                <li>
+                  <details>
+                    <summary>
+                      {{ $t("Layout") }}
+                    </summary>
+                    <ul>
+                      <li>
+                        <label class="label">
+                          <input
+                            v-model="ebook.layout"
+                            class="radio"
+                            name="layout"
+                            type="radio"
+                            :value="EbookLayout.Single"
+                            @change="onLayoutChange"
+                          />
+                          {{ $t("Single") }}
+                        </label>
+                      </li>
+                      <li>
+                        <label class="label">
+                          <input
+                            v-model="ebook.layout"
+                            class="radio"
+                            name="layout"
+                            type="radio"
+                            :value="EbookLayout.DualStart"
+                            @change="onLayoutChange"
+                          />
+                          {{ $t("Dual start") }}
+                        </label>
+                      </li>
+                      <li>
+                        <label class="label">
+                          <input
+                            v-model="ebook.layout"
+                            class="radio"
+                            name="layout"
+                            type="radio"
+                            :value="EbookLayout.DualEnd"
+                            @change="onLayoutChange"
+                          />
+                          {{ $t("Dual end") }}
+                        </label>
+                      </li>
+                    </ul>
+                  </details>
+                </li>
+                <li>
+                  <details>
+                    <summary>
+                      {{ $t("Rotate") }}
+                    </summary>
+                    <ul>
+                      <li>
+                        <button @click="onRotateOriginalClick">
+                          {{ $t("Original") }}
+                        </button>
+                      </li>
+                      <li>
+                        <button @click="onRotateLeftClick">
+                          {{ $t("Rotate left") }}
+                        </button>
+                      </li>
+                      <li>
+                        <button @click="onRotateRightClick">
+                          {{ $t("Rotate right") }}
+                        </button>
+                      </li>
+                    </ul>
+                  </details>
+                </li>
+              </ul>
+            </template>
+          </Dropdown>
+        </div>
+        <TitleBar
+          :subtitle="ebook.file.name"
+          title=""
         />
-        <Dropdown popoverId="ebookViewerPo">
-          <template #button>
-            <MoreVerticalIcon class="size-4" />
-          </template>
-          <template #content>
-            <ul class="menu bg-base-100 w-64 rounded-sm shadow-sm">
-              <li>
-                <button @click="onAddNoteClick">
-                  {{ $t("Add note") }}
-                </button>
-              </li>
-              <li>
-                <button @click="onMarksClick">
-                  {{ $t("Marks") }}
-                </button>
-              </li>
-              <li>
-                <button @click="onNotesClick">
-                  {{ $t("Notes") }}
-                </button>
-              </li>
-              <li>
-                <details>
-                  <summary>
-                    {{ $t("Colors") }}
-                  </summary>
-                  <ul>
-                    <li v-for="entry of Object.entries(ColorScheme)">
-                      <button @click="onColorClick(entry[1])">
-                        {{ $t(entry[0]) }}
-                      </button>
-                    </li>
-                  </ul>
-                </details>
-              </li>
-              <li>
-                <label class="label">
-                  <input
-                    v-model="ebook.flip"
-                    class="checkbox"
-                    type="checkbox"
-                    @change="onFlipChange"
-                  />
-                  {{ $t("Flip") }}
-                </label>
-              </li>
-              <li>
-                <details>
-                  <summary>
-                    {{ $t("Layout") }}
-                  </summary>
-                  <ul>
-                    <li>
-                      <label class="label">
-                        <input
-                          v-model="ebook.layout"
-                          class="radio"
-                          name="layout"
-                          type="radio"
-                          :value="EbookLayout.Single"
-                          @change="onLayoutChange"
-                        />
-                        {{ $t("Single") }}
-                      </label>
-                    </li>
-                    <li>
-                      <label class="label">
-                        <input
-                          v-model="ebook.layout"
-                          class="radio"
-                          name="layout"
-                          type="radio"
-                          :value="EbookLayout.DualStart"
-                          @change="onLayoutChange"
-                        />
-                        {{ $t("Dual start") }}
-                      </label>
-                    </li>
-                    <li>
-                      <label class="label">
-                        <input
-                          v-model="ebook.layout"
-                          class="radio"
-                          name="layout"
-                          type="radio"
-                          :value="EbookLayout.DualEnd"
-                          @change="onLayoutChange"
-                        />
-                        {{ $t("Dual end") }}
-                      </label>
-                    </li>
-                  </ul>
-                </details>
-              </li>
-              <li>
-                <details>
-                  <summary>
-                    {{ $t("Rotate") }}
-                  </summary>
-                  <ul>
-                    <li>
-                      <button @click="onRotateOriginalClick">
-                        {{ $t("Original") }}
-                      </button>
-                    </li>
-                    <li>
-                      <button @click="onRotateLeftClick">
-                        {{ $t("Rotate left") }}
-                      </button>
-                    </li>
-                    <li>
-                      <button @click="onRotateRightClick">
-                        {{ $t("Rotate right") }}
-                      </button>
-                    </li>
-                  </ul>
-                </details>
-              </li>
-            </ul>
-          </template>
-        </Dropdown>
-      </div>
-      <TitleBar
-        :subtitle="ebook.file.name"
-        title=""
-      />
-      <EbookSearchBar
-        ref="searchBar"
-        v-show="searching"
-        :startIndex="startIndex"
-        :endIndex="endIndex"
-        :pages="pages"
-        @change="onPositionChange"
-        @search="onSearch"
-        @step="onStep"
-        @query="onQuery"
-      />
-    </header>
+        <EbookSearchBar
+          ref="searchBar"
+          v-show="searching"
+          :startIndex="startIndex"
+          :endIndex="endIndex"
+          :pages="pages"
+          @change="onPositionChange"
+          @search="onSearch"
+          @step="onStep"
+          @query="onQuery"
+        />
+      </header>
+    </div>
     <div
       ref="container"
       class="flex h-0 grow flex-row overflow-scroll"

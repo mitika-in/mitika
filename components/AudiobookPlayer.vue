@@ -26,81 +26,82 @@
       <span>{{ formatToTimestamp(audiobook.length, hoursLength) }}</span>
     </div>
     <div
-      v-show="!focus"
-      class="join flex flex-row items-center justify-center gap-4"
+      class="collapse"
+      :class="{ 'collapse-open': !focus }"
     >
-      <button class="join-item btn btn-ghost">
-        <RewindIcon class="size-4" />
-      </button>
-      <button class="join-item btn btn-ghost">
-        <SkipBackIcon class="size-4" />
-      </button>
-      <label class="join-item swap swap-rotate btn btn-ghost">
-        <input
-          :checked="playing"
-          type="checkbox"
-          @change="onPlayingChange"
-        />
-        <PauseIcon class="swap-on size-4" />
-        <PlayIcon class="swap-off size-4" />
-      </label>
-      <button class="join-item btn btn-ghost">
-        <SkipForwardIcon class="size-4" />
-      </button>
-      <button class="join-item btn btn-ghost">
-        <FastForwardIcon class="size-4" />
-      </button>
-    </div>
-    <footer
-      v-show="!focus"
-      class="flex flex-col gap-4"
-    >
-      <div class="flex flex-row gap-4 self-center">
-        <button
-          class="btn btn-ghost"
-          @click="outlinesDialog!.toggle()"
-        >
-          <ListIcon class="size-4" />
-        </button>
-        <MarkButton :item="audiobook" />
-        <AudiobookRateButton
-          :rate="audiobook.rate"
-          @change="onRateChange"
-        />
-        <AudiobookVolumeButton
-          :volume="audiobook.volume"
-          @change="onVolumeChange"
-        />
-        <Dropdown popoverId="audiobookPlayerPo">
-          <template #button>
-            <MoreVerticalIcon class="size-4" />
-          </template>
-          <template #content>
-            <ul class="menu bg-base-100 w-64 rounded-sm shadow-sm">
-              <li>
-                <button @click="onAddNoteClick">
-                  {{ $t("Add note") }}
-                </button>
-              </li>
-              <li>
-                <button @click="onMarksClick">
-                  {{ $t("Marks") }}
-                </button>
-              </li>
-              <li>
-                <button @click="onNotesClick">
-                  {{ $t("Notes") }}
-                </button>
-              </li>
-            </ul>
-          </template>
-        </Dropdown>
+      <div class="collapse-content flex flex-col gap-4">
+        <div class="join flex flex-row items-center justify-center gap-4">
+          <button class="join-item btn btn-ghost">
+            <RewindIcon class="size-4" />
+          </button>
+          <button class="join-item btn btn-ghost">
+            <SkipBackIcon class="size-4" />
+          </button>
+          <label class="join-item swap swap-rotate btn btn-ghost">
+            <input
+              :checked="playing"
+              type="checkbox"
+              @change="onPlayingChange"
+            />
+            <PauseIcon class="swap-on size-4" />
+            <PlayIcon class="swap-off size-4" />
+          </label>
+          <button class="join-item btn btn-ghost">
+            <SkipForwardIcon class="size-4" />
+          </button>
+          <button class="join-item btn btn-ghost">
+            <FastForwardIcon class="size-4" />
+          </button>
+        </div>
+        <footer class="flex flex-col gap-4">
+          <div class="flex flex-row gap-4 self-center">
+            <button
+              class="btn btn-ghost"
+              @click="outlinesDialog!.toggle()"
+            >
+              <ListIcon class="size-4" />
+            </button>
+            <MarkButton :item="audiobook" />
+            <AudiobookRateButton
+              :rate="audiobook.rate"
+              @change="onRateChange"
+            />
+            <AudiobookVolumeButton
+              :volume="audiobook.volume"
+              @change="onVolumeChange"
+            />
+            <Dropdown popoverId="audiobookPlayerPo">
+              <template #button>
+                <MoreVerticalIcon class="size-4" />
+              </template>
+              <template #content>
+                <ul class="menu bg-base-100 w-64 rounded-sm shadow-sm">
+                  <li>
+                    <button @click="onAddNoteClick">
+                      {{ $t("Add note") }}
+                    </button>
+                  </li>
+                  <li>
+                    <button @click="onMarksClick">
+                      {{ $t("Marks") }}
+                    </button>
+                  </li>
+                  <li>
+                    <button @click="onNotesClick">
+                      {{ $t("Notes") }}
+                    </button>
+                  </li>
+                </ul>
+              </template>
+            </Dropdown>
+          </div>
+          <TitleBar
+            :subtitle="audiobook.file.name"
+            title=""
+          />
+        </footer>
       </div>
-      <TitleBar
-        :subtitle="audiobook.file.name"
-        title=""
-      />
-    </footer>
+    </div>
     <AddNoteDialog
       ref="addNoteDialog"
       :item="audiobook"

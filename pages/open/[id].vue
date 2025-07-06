@@ -7,90 +7,92 @@
     >
       <ZapOffIcon class="size-4" />
     </button>
-    <header
-      v-show="!book.focus"
-      class="flex flex-row gap-4"
+    <div
+      class="collapse"
+      :class="{ 'collapse-open': !book.focus }"
     >
-      <button
-        class="btn btn-ghost"
-        @click="itemsDialog!.toggle()"
-      >
-        <FileIcon class="size-4" />
-      </button>
-      <TitleBar
-        class="grow"
-        :subtitle="book.authors.join(', ')"
-        :title="book.name"
-      />
-      <Dropdown popoverId="openPo">
-        <template #button>
-          <MenuIcon class="size-4" />
-        </template>
-        <template #content>
-          <ul class="menu bg-base-100 w-64 rounded-sm shadow-sm">
-            <li v-if="audiobook && ebook">
-              <details>
-                <summary>
-                  {{ $t("View") }}
-                </summary>
-                <ul>
-                  <li>
-                    <label>
-                      <input
-                        v-model="book.openAudiobook"
-                        type="checkbox"
-                        class="checkbox"
-                      />
-                      {{ $t("Audiobook") }}
-                    </label>
-                  </li>
-                  <li>
-                    <label>
-                      <input
-                        v-model="book.openEbook"
-                        type="checkbox"
-                        class="checkbox"
-                      />
-                      {{ $t("Ebook") }}
-                    </label>
-                  </li>
-                </ul>
-              </details>
-            </li>
-            <li>
-              <button @click="onFocusToggle">
-                {{ $t("Focus mode") }}
-              </button>
-            </li>
-            <li>
-              <NuxtLink :to="`/edit/${book.id}`">
-                {{ $t("Edit") }}
-              </NuxtLink>
-            </li>
-            <li>
-              <NuxtLink to="/">
-                {{ $t("Home") }}
-              </NuxtLink>
-            </li>
-            <li>
-              <NuxtLink to="/logs">
-                {{ $t("Logs") }}
-              </NuxtLink>
-            </li>
-            <li>
-              <button>
-                {{ $t("Help") }}
-              </button>
-            </li>
-            <li>
-              <button @click="aboutDialog!.toggle()">
-                {{ $t("About {name}", { name: Constants.NAME }) }}
-              </button>
-            </li>
-          </ul>
-        </template>
-      </Dropdown>
-    </header>
+      <header class="collapse-content flex flex-row gap-4">
+        <button
+          class="btn btn-ghost"
+          @click="itemsDialog!.toggle()"
+        >
+          <FileIcon class="size-4" />
+        </button>
+        <TitleBar
+          class="grow"
+          :subtitle="book.authors.join(', ')"
+          :title="book.name"
+        />
+        <Dropdown popoverId="openPo">
+          <template #button>
+            <MenuIcon class="size-4" />
+          </template>
+          <template #content>
+            <ul class="menu bg-base-100 w-64 rounded-sm shadow-sm">
+              <li v-if="audiobook && ebook">
+                <details>
+                  <summary>
+                    {{ $t("View") }}
+                  </summary>
+                  <ul>
+                    <li>
+                      <label>
+                        <input
+                          v-model="book.openAudiobook"
+                          type="checkbox"
+                          class="checkbox"
+                        />
+                        {{ $t("Audiobook") }}
+                      </label>
+                    </li>
+                    <li>
+                      <label>
+                        <input
+                          v-model="book.openEbook"
+                          type="checkbox"
+                          class="checkbox"
+                        />
+                        {{ $t("Ebook") }}
+                      </label>
+                    </li>
+                  </ul>
+                </details>
+              </li>
+              <li>
+                <button @click="onFocusToggle">
+                  {{ $t("Focus mode") }}
+                </button>
+              </li>
+              <li>
+                <NuxtLink :to="`/edit/${book.id}`">
+                  {{ $t("Edit") }}
+                </NuxtLink>
+              </li>
+              <li>
+                <NuxtLink to="/">
+                  {{ $t("Home") }}
+                </NuxtLink>
+              </li>
+              <li>
+                <NuxtLink to="/logs">
+                  {{ $t("Logs") }}
+                </NuxtLink>
+              </li>
+              <li>
+                <button>
+                  {{ $t("Help") }}
+                </button>
+              </li>
+              <li>
+                <button @click="aboutDialog!.toggle()">
+                  {{ $t("About {name}", { name: Constants.NAME }) }}
+                </button>
+              </li>
+            </ul>
+          </template>
+        </Dropdown>
+      </header>
+    </div>
     <figure
       v-if="!ebook || !book.openEbook"
       class="flex h-0 grow place-content-center"

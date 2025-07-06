@@ -51,7 +51,6 @@ export class Opfs extends Source {
       input.onchange = async () => {
         if (!input.files) return resolve([]);
         const files: OpfsFile[] = [];
-        console.log(input.files);
         for (const file of input.files) files.push(await this.createFile(file));
         resolve(files);
       };

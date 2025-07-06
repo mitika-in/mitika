@@ -1,6 +1,16 @@
 <template>
   <div class="flex h-dvh flex-col gap-4 p-4">
-    <header class="flex flex-row gap-4">
+    <button
+      v-show="book.focus"
+      class="btn btn-circle absolute end-4 top-4 z-2"
+      @click="onFocusToggle"
+    >
+      <ZapOffIcon class="size-4" />
+    </button>
+    <header
+      v-show="!book.focus"
+      class="flex flex-row gap-4"
+    >
       <button
         class="btn btn-ghost"
         @click="itemsDialog!.toggle()"
@@ -47,7 +57,12 @@
                 </ul>
               </details>
             </li>
-            <li v-if="book">
+            <li>
+              <button @click="onFocusToggle">
+                {{ $t("Focus mode") }}
+              </button>
+            </li>
+            <li>
               <NuxtLink :to="`/edit/${book.id}`">
                 {{ $t("Edit") }}
               </NuxtLink>
@@ -88,13 +103,15 @@
     </figure>
     <EbookViewer
       v-if="ebook && book.openEbook"
-      :ebook="ebook"
       class="grow"
+      :ebook="ebook"
+      :focus="book.focus"
       @metadata="onMetadata"
     />
     <AudiobookPlayer
       v-if="audiobook && book.openAudiobook"
       :audiobook="audiobook"
+      :focus="book.focus"
       @metadata="onMetadata"
     />
     <AboutDialog ref="aboutDialog" />
@@ -133,6 +150,11 @@ const coverUrl: ComputedRef<string | null> = computed((oldCoverUrl) => {
   return URL.createObjectURL(cover.value);
 });
 
+function onFocusToggle() {
+  debug(`Changing to focus: ${!book.value.focus}`);
+  book.value.focus = !book.value.focus;
+}
+
 async function onOpenItem(item: Item, forceOpen: boolean) {
   debug(f`Opening item: ${item}, force: ${forceOpen}`);
   if (item.type == ItemType.Audiobook) {
@@ -145,8 +167,6 @@ async function onOpenItem(item: Item, forceOpen: boolean) {
     throw new Error(`Unknown item type: ${item.type}`);
   }
 }
-
-function onAboutClick() {}
 
 async function onMetadata(metadata: Metadata) {
   debug(f`Got metadata: ${metadata}`);

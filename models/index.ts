@@ -5,6 +5,7 @@ import {
   type Ebook,
   type EbookColor,
   type EbookPosition,
+  EbookResizePolicy,
   EbookLayout,
   createEbook,
 } from "@/models/ebook";
@@ -23,5 +24,6 @@ export {
   createNote,
   ColorScheme,
   EbookLayout,
+  EbookResizePolicy,
   ItemType,
 };

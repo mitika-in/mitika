@@ -13,16 +13,28 @@
           </li>
           <li>
             <button @click="$emit('fitHeight')">
+              <CheckIcon
+                v-show="resizePolicy == EbookResizePolicy.FitHeight"
+                class="size-4"
+              />
               {{ $t("Fit height") }}
             </button>
           </li>
           <li>
             <button @click="$emit('fitWidth')">
+              <CheckIcon
+                v-show="resizePolicy == EbookResizePolicy.FitWidth"
+                class="size-4"
+              />
               {{ $t("Fit width") }}
             </button>
           </li>
           <li>
             <button @click="$emit('fitPage')">
+              <CheckIcon
+                v-show="resizePolicy == EbookResizePolicy.FitPage"
+                class="size-4"
+              />
               {{ $t("Fit page") }}
             </button>
           </li>
@@ -53,7 +65,10 @@
   </Dropdown>
 </template>
 <script setup lang="ts">
+import { EbookResizePolicy } from "@/models";
+
 interface Props {
+  resizePolicy: EbookResizePolicy;
   scale: number;
 }
 

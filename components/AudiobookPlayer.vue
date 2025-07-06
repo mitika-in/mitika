@@ -1,6 +1,18 @@
 <template>
   <div class="flex flex-col gap-4">
     <div class="flex flex-row items-center gap-4">
+      <label
+        v-show="focus"
+        class="join-item swap swap-rotate btn btn-ghost"
+      >
+        <input
+          :checked="playing"
+          type="checkbox"
+          @change="onPlayingChange"
+        />
+        <PauseIcon class="swap-on size-4" />
+        <PlayIcon class="swap-off size-4" />
+      </label>
       <span>{{ formatToTimestamp(audiobook.position.value, hoursLength) }}</span>
       <input
         class="range grow"
@@ -13,7 +25,10 @@
       />
       <span>{{ formatToTimestamp(audiobook.length, hoursLength) }}</span>
     </div>
-    <div class="join flex flex-row items-center justify-center gap-4">
+    <div
+      v-show="!focus"
+      class="join flex flex-row items-center justify-center gap-4"
+    >
       <button class="join-item btn btn-ghost">
         <RewindIcon class="size-4" />
       </button>
@@ -36,7 +51,10 @@
         <FastForwardIcon class="size-4" />
       </button>
     </div>
-    <footer class="flex flex-col gap-4">
+    <footer
+      v-show="!focus"
+      class="flex flex-col gap-4"
+    >
       <div class="flex flex-row gap-4 self-center">
         <button
           class="btn btn-ghost"
@@ -120,6 +138,7 @@ const { f, debug } = useLogger("audiobookPlayer");
 
 interface Props {
   audiobook: Audiobook;
+  focus: boolean;
 }
 
 interface Emits {

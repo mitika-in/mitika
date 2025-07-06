@@ -1,6 +1,9 @@
 <template>
   <div class="relative flex flex-col gap-4">
-    <header class="flex flex-col gap-4">
+    <header
+      v-show="!focus"
+      class="flex flex-col gap-4"
+    >
       <div class="flex flex-row gap-4 self-center">
         <button
           class="btn btn-ghost"
@@ -17,6 +20,7 @@
           <SearchIcon class="size-4" />
         </button>
         <EbookScaleButton
+          :resizePolicy="ebook.resizePolicy"
           :scale="ebook.scale"
           @change="onScaleChange"
           @fitHeight="onScaleToFitHeight"
@@ -253,6 +257,7 @@ import { useLogger } from "@/logging";
 import {
   ColorScheme,
   EbookLayout,
+  EbookResizePolicy,
   type EbookColor,
   type Ebook,
   type Mark,
@@ -267,6 +272,7 @@ const DUAL_PAGE_WIDTH = 768;
 
 interface Props {
   ebook: Ebook;
+  focus: boolean;
 }
 
 interface Emits {
@@ -280,6 +286,8 @@ const database = await useDatabase();
 const source = await useSource();
 
 let backend: EbookBackend | null = null;
+
+const observer = new ResizeObserver(onContainerResize);
 
 const pages: Ref<Page[]> = shallowRef([]);
 const outlines: Ref<Outline[]> = shallowRef([]);
@@ -330,55 +338,56 @@ async function onPositionChange(position: EbookPosition) {
 
 async function onScaleChange(scale: number) {
   debug(`Changing to scale: ${scale}`);
+  if (scale == Infinity) throw new Error("Invalid scale");
   ebook.scale = scale;
   await loadImageData();
+  ebook.resizePolicy = EbookResizePolicy.None;
 }
 
-function getPageElements(): Element[] {
-  const elements: Element[] = [];
-  if (startPage.value && startPage.value.root) elements.push(startPage.value.root);
-  if (ebook.layout != EbookLayout.Single && endPage.value && endPage.value.root)
-    elements.push(endPage.value.root);
-  return elements;
-}
-
-function onScaleToFitWidth() {
+async function onScaleToFitWidth() {
   debug(`Changing scale to fit width`);
 
-  const elements = getPageElements();
-  if (elements.length == 0 || !container.value) return;
+  if (!pages.value.length || !container.value) return;
 
   let width = 0;
-  for (const element of elements) width += element.clientWidth / ebook.scale;
+  if (startIndex.value >= 0) width += pages.value[startIndex.value].width;
+  if (ebook.layout != EbookLayout.Single && endIndex.value < pages.value.length)
+    width += pages.value[endIndex.value].width;
 
   const scale = container.value.clientWidth / width;
-  onScaleChange(scale);
+  await onScaleChange(scale);
+  ebook.resizePolicy = EbookResizePolicy.FitWidth;
 }
 
-function onScaleToFitHeight() {
+async function onScaleToFitHeight() {
   debug(`Changing scale to fit height`);
 
-  const elements = getPageElements();
-  if (elements.length == 0 || !container.value) return;
+  if (!pages.value.length || !container.value) return;
 
   let height = 0;
-  for (const element of elements) height = Math.max(element.clientHeight / ebook.scale);
+  if (startIndex.value >= 0) height = pages.value[startIndex.value].height;
+  if (ebook.layout != EbookLayout.Single && endIndex.value < pages.value.length)
+    height = Math.max(pages.value[endIndex.value].height, height);
 
   const scale = container.value.clientHeight / height;
-  onScaleChange(scale);
+  await onScaleChange(scale);
+  ebook.resizePolicy = EbookResizePolicy.FitHeight;
 }
 
-function onScaleToFitPage() {
+async function onScaleToFitPage() {
   debug(`Changing scale to fit page`);
 
-  const elements = getPageElements();
-  if (elements.length == 0 || !container.value) return;
+  if (!pages.value.length || !container.value) return;
 
   let width = 0;
   let height = 0;
-  for (const element of elements) {
-    width += element.clientWidth / ebook.scale;
-    height = Math.max(element.clientHeight / ebook.scale);
+  if (startIndex.value >= 0) {
+    width += pages.value[startIndex.value].width;
+    height = Math.max(pages.value[endIndex.value].height, height);
+  }
+  if (ebook.layout != EbookLayout.Single && endIndex.value < pages.value.length) {
+    width += pages.value[endIndex.value].width;
+    height = Math.max(pages.value[endIndex.value].height, height);
   }
 
   const scale = Math.min(
@@ -386,7 +395,16 @@ function onScaleToFitPage() {
     container.value.clientHeight / height,
   );
 
-  onScaleChange(scale);
+  await onScaleChange(scale);
+  ebook.resizePolicy = EbookResizePolicy.FitPage;
+}
+
+function onContainerResize() {
+  debug(`Container resized, adopting resize policy: ${ebook.resizePolicy}`);
+
+  if (ebook.resizePolicy == EbookResizePolicy.FitWidth) onScaleToFitWidth();
+  else if (ebook.resizePolicy == EbookResizePolicy.FitHeight) onScaleToFitHeight();
+  else if (ebook.resizePolicy == EbookResizePolicy.FitPage) onScaleToFitPage();
 }
 
 function onSearchClick() {
@@ -660,7 +678,7 @@ async function open(ebook: Ebook) {
   emit("metadata", await backend!.getMetadata());
 
   await loadLayout();
-  if (fitScale) onScaleToFitPage();
+  if (fitScale) await onScaleToFitPage();
 }
 
 async function close(ebook: Ebook) {
@@ -681,7 +699,12 @@ watch(
   { immediate: true },
 );
 
+onMounted(() => {
+  observer.observe(container.value!);
+});
+
 onUnmounted(async () => {
+  observer.disconnect();
   await close(ebook);
 });
 </script>

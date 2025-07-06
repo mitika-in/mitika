@@ -9,15 +9,22 @@ export interface EbookColor {
 }
 
 export enum EbookLayout {
-  Single,
-  DualStart,
-  DualEnd,
+  Single = "single",
+  DualStart = "dualStart",
+  DualEnd = "dualEnd",
 }
 
 export interface EbookPosition extends Position {
   name: string;
   x: number;
   y: number;
+}
+
+export enum EbookResizePolicy {
+  None = "none",
+  FitWidth = "fitWidth",
+  FitHeight = "fitHeight",
+  FitPage = "fitPage",
 }
 
 export interface Ebook extends Item {
@@ -27,6 +34,7 @@ export interface Ebook extends Item {
   layout: EbookLayout;
   rotate: number;
   scale: number;
+  resizePolicy: EbookResizePolicy;
 }
 
 export function createEbook(parentId: string, name: string, file: File): Ebook {
@@ -44,5 +52,6 @@ export function createEbook(parentId: string, name: string, file: File): Ebook {
     layout: EbookLayout.Single,
     rotate: 0,
     scale: 1,
+    resizePolicy: EbookResizePolicy.FitPage,
   };
 }

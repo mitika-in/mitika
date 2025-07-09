@@ -10,7 +10,10 @@
       <p class="list-col-grow self-center">
         {{ mark.name }}
       </p>
-      <Dropdown :popoverId="`marksDialogRowPo_${mark.id}`">
+      <Dropdown
+        :popoverId="`marksDialogRowPo_${mark.id}`"
+        styleClass="btn-ghost"
+      >
         <template #button>
           <MoreVerticalIcon class="size-4" />
         </template>

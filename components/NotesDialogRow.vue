@@ -15,7 +15,10 @@
         class="textarea list-col-wrap col-start-1 col-end-4 max-h-[25vh] w-full"
         readonly="true"
       />
-      <Dropdown :popoverId="`notesDialogRowPo_${note.id}`">
+      <Dropdown
+        :popoverId="`notesDialogRowPo_${note.id}`"
+        styleClass="btn-ghost"
+      >
         <template #button>
           <MoreVerticalIcon class="size-4" />
         </template>

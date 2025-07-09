@@ -20,7 +20,10 @@
         </p>
       </div>
     </button>
-    <Dropdown :popoverId="`bookRowPo_${book.id}`">
+    <Dropdown
+      :popoverId="`bookRowPo_${book.id}`"
+      styleClass="btn-ghost"
+    >
       <template #button>
         <MoreVerticalIcon class="size-4" />
       </template>

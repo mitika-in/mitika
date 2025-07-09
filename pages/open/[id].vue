@@ -23,7 +23,10 @@
           :subtitle="book.authors.join(', ')"
           :title="book.name"
         />
-        <Dropdown popoverId="openPo">
+        <Dropdown
+          popoverId="openPo"
+          styleClass="btn-ghost"
+        >
           <template #button>
             <MenuIcon class="size-4" />
           </template>

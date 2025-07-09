@@ -18,7 +18,10 @@
           {{ item.file.name }}
         </p>
       </div>
-      <Dropdown :popoverId="item.id">
+      <Dropdown
+        :popoverId="item.id"
+        styleClass="btn-ghost"
+      >
         <template #button>
           <MoreVerticalIcon class="size-4" />
         </template>

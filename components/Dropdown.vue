@@ -1,7 +1,8 @@
 <template>
   <button
     class="btn"
-    :class="{ 'btn-ghost': ghostBtn, 'w-full md:w-64': responsive }"
+    :class="styleClass"
+    :classx="{ 'btn-ghost': ghostBtn, 'w-full md:w-64': responsive }"
     :popovertarget="popoverId"
     :style="`anchor-name:--anchor-${popoverId}`"
   >
@@ -19,6 +20,7 @@
 <script setup lang="ts">
 interface Props {
   ghostBtn?: boolean;
+  styleClass?: string;
   popoverId: string;
   responsive?: boolean;
 }

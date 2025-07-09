@@ -1,6 +1,9 @@
 <template>
-  <div class="flex flex-col text-center">
-    <div class="flex flex-row">
+  <div class="flex flex-col justify-center text-center">
+    <div
+      v-if="title.length != 0"
+      class="flex flex-row"
+    >
       <h1 class="w-0 grow truncate font-bold">
         {{ title }}
       </h1>

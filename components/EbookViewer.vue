@@ -4,8 +4,8 @@
       class="collapse"
       :class="{ 'collapse-open': !focus }"
     >
-      <header class="collapse-content flex flex-col gap-4">
-        <div class="flex flex-row gap-4 self-center">
+      <div class="collapse-content flex flex-col gap-4">
+        <div class="@container flex flex-row items-center justify-center gap-4">
           <button
             class="btn btn-ghost"
             @click="outlinesDialog!.toggle()"
@@ -28,43 +28,72 @@
             @fitPage="onScaleToFitPage"
             @fitWidth="onScaleToFitWidth"
           />
-          <Dropdown popoverId="ebookViewerPo">
+          <button
+            class="btn btn-ghost hidden @sm:flex"
+            @click="colorDialog.toggle()"
+          >
+            <ImageIcon class="size-4" />
+          </button>
+          <label class="btn btn-ghost hidden @md:flex">
+            <input
+              v-model="ebook.flip"
+              class="checkbox peer hidden"
+              type="checkbox"
+              @change="onFlipChange"
+            />
+            <span class="peer-checked:rotate-y-180">
+              {{ $t("F") }}
+            </span>
+          </label>
+          <button
+            class="btn btn-ghost hidden @lg:flex"
+            @click="layoutDialog.toggle()"
+          >
+            <ColumnsIcon class="size-4" />
+          </button>
+          <button
+            class="btn btn-ghost hidden @xl:flex"
+            @click="rotateDialog.toggle()"
+          >
+            <ArrowUpCircleIcon
+              class="size-4"
+              :style="`transform: rotateZ(${ebook.rotate}deg)`"
+            />
+          </button>
+          <button
+            class="btn btn-ghost hidden @2xl:flex"
+            @click="addNoteDialog.toggle()"
+          >
+            <FilePlusIcon class="size-4" />
+          </button>
+          <button
+            class="btn btn-ghost hidden @3xl:flex"
+            @click="marksDialog.toggle()"
+          >
+            <TagIcon class="size-4" />
+          </button>
+          <button
+            class="btn btn-ghost hidden @4xl:flex"
+            @click="notesDialog.toggle()"
+          >
+            <LayersIcon class="size-4" />
+          </button>
+          <Dropdown
+            popoverId="ebookViewerPo"
+            styleClass="btn-ghost @4xl:hidden"
+          >
             <template #button>
               <MoreVerticalIcon class="size-4" />
             </template>
             <template #content>
               <ul class="menu bg-base-100 w-64 rounded-sm shadow-sm">
-                <li>
-                  <button @click="onAddNoteClick">
-                    {{ $t("Add note") }}
+                <li class="@sm:hidden">
+                  <button @click="colorDialog.toggle()">
+                    {{ $t("Color") }}
                   </button>
                 </li>
                 <li>
-                  <button @click="onMarksClick">
-                    {{ $t("Marks") }}
-                  </button>
-                </li>
-                <li>
-                  <button @click="onNotesClick">
-                    {{ $t("Notes") }}
-                  </button>
-                </li>
-                <li>
-                  <details>
-                    <summary>
-                      {{ $t("Colors") }}
-                    </summary>
-                    <ul>
-                      <li v-for="entry of Object.entries(ColorScheme)">
-                        <button @click="onColorClick(entry[1])">
-                          {{ $t(entry[0]) }}
-                        </button>
-                      </li>
-                    </ul>
-                  </details>
-                </li>
-                <li>
-                  <label class="label">
+                  <label class="label @md:hidden">
                     <input
                       v-model="ebook.flip"
                       class="checkbox"
@@ -74,77 +103,30 @@
                     {{ $t("Flip") }}
                   </label>
                 </li>
-                <li>
-                  <details>
-                    <summary>
-                      {{ $t("Layout") }}
-                    </summary>
-                    <ul>
-                      <li>
-                        <label class="label">
-                          <input
-                            v-model="ebook.layout"
-                            class="radio"
-                            name="layout"
-                            type="radio"
-                            :value="EbookLayout.Single"
-                            @change="onLayoutChange"
-                          />
-                          {{ $t("Single") }}
-                        </label>
-                      </li>
-                      <li>
-                        <label class="label">
-                          <input
-                            v-model="ebook.layout"
-                            class="radio"
-                            name="layout"
-                            type="radio"
-                            :value="EbookLayout.DualStart"
-                            @change="onLayoutChange"
-                          />
-                          {{ $t("Dual start") }}
-                        </label>
-                      </li>
-                      <li>
-                        <label class="label">
-                          <input
-                            v-model="ebook.layout"
-                            class="radio"
-                            name="layout"
-                            type="radio"
-                            :value="EbookLayout.DualEnd"
-                            @change="onLayoutChange"
-                          />
-                          {{ $t("Dual end") }}
-                        </label>
-                      </li>
-                    </ul>
-                  </details>
+                <li class="@lg:hidden">
+                  <button @click="layoutDialog.toggle()">
+                    {{ $t("Layout") }}
+                  </button>
                 </li>
-                <li>
-                  <details>
-                    <summary>
-                      {{ $t("Rotate") }}
-                    </summary>
-                    <ul>
-                      <li>
-                        <button @click="onRotateOriginalClick">
-                          {{ $t("Original") }}
-                        </button>
-                      </li>
-                      <li>
-                        <button @click="onRotateLeftClick">
-                          {{ $t("Rotate left") }}
-                        </button>
-                      </li>
-                      <li>
-                        <button @click="onRotateRightClick">
-                          {{ $t("Rotate right") }}
-                        </button>
-                      </li>
-                    </ul>
-                  </details>
+                <li class="@xl:hidden">
+                  <button @click="rotateDialog.toggle()">
+                    {{ $t("Rotate") }}
+                  </button>
+                </li>
+                <li class="@2xl:hidden">
+                  <button @click="addNoteDialog.toggle()">
+                    {{ $t("Add note") }}
+                  </button>
+                </li>
+                <li class="@3xl:hidden">
+                  <button @click="marksDialog.toggle()">
+                    {{ $t("Marks") }}
+                  </button>
+                </li>
+                <li class="@4xl:hidden">
+                  <button @click="notesDialog.toggle()">
+                    {{ $t("Notes") }}
+                  </button>
                 </li>
               </ul>
             </template>
@@ -165,7 +147,7 @@
           @step="onStep"
           @query="onQuery"
         />
-      </header>
+      </div>
     </div>
     <div
       ref="container"
@@ -230,6 +212,16 @@
       ref="addNoteDialog"
       :item="ebook"
     />
+    <EbookColorDialog
+      ref="colorDialog"
+      :color="ebook.color"
+      @change="onColorChange"
+    />
+    <EbookLayoutDialog
+      ref="layoutDialog"
+      :layout="ebook.layout"
+      @change="onLayoutChange"
+    />
     <MarksDialog
       ref="marksDialog"
       :item="ebook"
@@ -246,6 +238,11 @@
       :item="ebook"
       :outlines="outlines"
       @openOutline="onOpenOutline"
+    />
+    <EbookRotateDialog
+      ref="rotateDialog"
+      :rotate="ebook.rotate"
+      @change="onRotateChange"
     />
   </div>
 </template>
@@ -306,10 +303,13 @@ const container = useTemplateRef("container");
 const searchBar = useTemplateRef("searchBar");
 
 const addNoteDialog = useTemplateRef("addNoteDialog");
+const colorDialog = useTemplateRef("colorDialog");
+const layoutDialog = useTemplateRef("layoutDialog");
 const marksDialog = useTemplateRef("marksDialog");
 const notesDialog = useTemplateRef("notesDialog");
 const openUriDialog = useTemplateRef("openUriDialog");
 const outlinesDialog = useTemplateRef("outlinesDialog");
+const rotateDialog = useTemplateRef("rotateDialog");
 
 let startMatchesLength = 0;
 let scrollTimeoutId = 0;
@@ -423,7 +423,7 @@ function onAddNoteClick() {
   addNoteDialog.value!.show();
 }
 
-function onColorClick(color: EbookColor) {
+function onColorChange(color: EbookColor) {
   debug(f`Changing to color: ${color}`);
   ebook.color = color;
   loadImageData();
@@ -433,8 +433,9 @@ function onFlipChange() {
   debug(f`Changing to flip: ${ebook.flip}`);
 }
 
-function onLayoutChange() {
-  debug(f`Changing to layout: ${ebook.layout}`);
+function onLayoutChange(layout: EbookLayout) {
+  debug(f`Changing to layout: ${layout}`);
+  ebook.layout = layout;
   loadLayout();
 }
 
@@ -446,19 +447,7 @@ function onNotesClick() {
   notesDialog.value!.show();
 }
 
-async function onRotateOriginalClick() {
-  debug(`Changing to rotate: 0`);
-  ebook.rotate = 0;
-}
-
-async function onRotateLeftClick() {
-  const rotate = (ebook.rotate - 90) % 360;
-  debug(`Changing to rotate: ${rotate}`);
-  ebook.rotate = rotate;
-}
-
-async function onRotateRightClick() {
-  const rotate = (ebook.rotate + 90) % 360;
+async function onRotateChange(rotate: number) {
   debug(`Changing to rotate: ${rotate}`);
   ebook.rotate = rotate;
 }

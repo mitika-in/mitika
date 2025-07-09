@@ -61,5 +61,10 @@ function show() {
   dialog.value!.show();
 }
 
-defineExpose({ show });
+function toggle() {
+  if (dialog.value!.isShown()) dialog.value!.hide();
+  else show();
+}
+
+defineExpose({ toggle });
 </script>

@@ -94,11 +94,11 @@ async function onNotesChanged() {
   notes.value = await database!.getNotes(item.id);
 }
 
-function show() {
-  dialog.value!.show();
+function toggle() {
+  dialog.value!.toggle();
 }
 
-defineExpose({ show });
+defineExpose({ toggle });
 
 database = await useDatabase();
 watch(

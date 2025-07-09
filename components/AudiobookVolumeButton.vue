@@ -1,5 +1,8 @@
 <template>
-  <Dropdown popoverId="audiobookVolumeButtonPo">
+  <Dropdown
+    popoverId="audiobookVolumeButtonPo"
+    styleClass="btn-ghost"
+  >
     <template #button>
       <VolumeXIcon
         v-if="volume == 0"

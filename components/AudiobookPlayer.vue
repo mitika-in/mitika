@@ -53,53 +53,72 @@
             <FastForwardIcon class="size-4" />
           </button>
         </div>
-        <footer class="flex flex-col gap-4">
-          <div class="flex flex-row gap-4 self-center">
-            <button
-              class="btn btn-ghost"
-              @click="outlinesDialog!.toggle()"
-            >
-              <ListIcon class="size-4" />
-            </button>
-            <MarkButton :item="audiobook" />
-            <AudiobookRateButton
-              :rate="audiobook.rate"
-              @change="onRateChange"
-            />
-            <AudiobookVolumeButton
-              :volume="audiobook.volume"
-              @change="onVolumeChange"
-            />
-            <Dropdown popoverId="audiobookPlayerPo">
-              <template #button>
-                <MoreVerticalIcon class="size-4" />
-              </template>
-              <template #content>
-                <ul class="menu bg-base-100 w-64 rounded-sm shadow-sm">
-                  <li>
-                    <button @click="onAddNoteClick">
-                      {{ $t("Add note") }}
-                    </button>
-                  </li>
-                  <li>
-                    <button @click="onMarksClick">
-                      {{ $t("Marks") }}
-                    </button>
-                  </li>
-                  <li>
-                    <button @click="onNotesClick">
-                      {{ $t("Notes") }}
-                    </button>
-                  </li>
-                </ul>
-              </template>
-            </Dropdown>
-          </div>
-          <TitleBar
-            :subtitle="audiobook.file.name"
-            title=""
+        <div class="@container flex flex-row items-center justify-center gap-4">
+          <button
+            class="btn btn-ghost"
+            @click="outlinesDialog!.toggle()"
+          >
+            <ListIcon class="size-4" />
+          </button>
+          <MarkButton :item="audiobook" />
+          <AudiobookRateButton
+            :rate="audiobook.rate"
+            @change="onRateChange"
           />
-        </footer>
+          <AudiobookVolumeButton
+            :volume="audiobook.volume"
+            @change="onVolumeChange"
+          />
+          <button
+            class="btn btn-ghost hidden @sm:flex"
+            @click="addNoteDialog.toggle()"
+          >
+            <FilePlusIcon class="size-4" />
+          </button>
+          <button
+            class="btn btn-ghost hidden @md:flex"
+            @click="marksDialog.toggle()"
+          >
+            <TagIcon class="size-4" />
+          </button>
+          <button
+            class="btn btn-ghost hidden @lg:flex"
+            @click="notesDialog.toggle()"
+          >
+            <LayersIcon class="size-4" />
+          </button>
+          <Dropdown
+            popoverId="audiobookPlayerPo"
+            styleClass="btn-ghost @lg:hidden"
+          >
+            <template #button>
+              <MoreVerticalIcon class="size-4" />
+            </template>
+            <template #content>
+              <ul class="menu bg-base-100 w-64 rounded-sm shadow-sm">
+                <li class="@sm:hidden">
+                  <button @click="addNoteDialog.toggle()">
+                    {{ $t("Add note") }}
+                  </button>
+                </li>
+                <li class="@md:hidden">
+                  <button @click="marksDialog.toggle()">
+                    {{ $t("Marks") }}
+                  </button>
+                </li>
+                <li class="@lg:hidden">
+                  <button @click="notesDialog.toggle()">
+                    {{ $t("Notes") }}
+                  </button>
+                </li>
+              </ul>
+            </template>
+          </Dropdown>
+        </div>
+        <TitleBar
+          :subtitle="audiobook.file.name"
+          title=""
+        />
       </div>
     </div>
     <AddNoteDialog

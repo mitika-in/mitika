@@ -92,11 +92,11 @@ async function onMarksChanged() {
   marks.value = await database!.getMarks(item.id);
 }
 
-function show() {
-  dialog.value!.show();
+function toggle() {
+  dialog.value!.toggle();
 }
 
-defineExpose({ show });
+defineExpose({ toggle });
 
 database = await useDatabase();
 

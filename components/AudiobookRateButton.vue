@@ -1,5 +1,8 @@
 <template>
-  <Dropdown popoverId="audiobookRateButtonPo">
+  <Dropdown
+    popoverId="audiobookRateButtonPo"
+    styleClass="btn-ghost"
+  >
     <template #button>
       <WatchIcon class="size-4" />
     </template>

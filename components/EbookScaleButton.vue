@@ -1,5 +1,8 @@
 <template>
-  <Dropdown popoverId="ebookScaleButtonPo">
+  <Dropdown
+    popoverId="ebookScaleButtonPo"
+    styleClass="btn-ghost"
+  >
     <template #button>
       <EyeIcon class="size-4" />
     </template>

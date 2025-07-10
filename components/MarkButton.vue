@@ -1,9 +1,17 @@
 <template>
   <button
-    class="btn btn-ghost"
-    @click="onMarkClick"
+    :class="{ 'btn btn-ghost': !listItem }"
+    @click="onClick"
   >
+    <template v-if="listItem">
+      <CheckIcon
+        v-show="marked"
+        class="size-4"
+      />
+      {{ $t("Mark") }}
+    </template>
     <BookmarkIcon
+      v-else
       class="size-4"
       :class="{ 'fill-current': marked }"
     />
@@ -18,6 +26,7 @@ const { t } = useI18n();
 
 interface Props {
   item: Item;
+  listItem: boolean;
 }
 
 const { item } = defineProps<Props>();
@@ -46,7 +55,7 @@ async function addMark() {
   await database.putMark(mark);
 }
 
-async function onMarkClick() {
+async function onClick() {
   if (marked.value) await delMark();
   else await addMark();
 }

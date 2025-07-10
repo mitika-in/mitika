@@ -55,20 +55,39 @@
         </div>
         <div class="@container flex flex-row items-center justify-center gap-4">
           <button
-            class="btn btn-ghost"
+            class="btn btn-ghost hidden @3xs:flex"
             @click="outlinesDialog!.toggle()"
           >
             <ListIcon class="size-4" />
           </button>
-          <MarkButton :item="audiobook" />
-          <AudiobookRateButton
-            :rate="audiobook.rate"
-            @change="onRateChange"
+          <MarkButton
+            class="hidden @3xs:flex"
+            :item="audiobook"
+            :listItem="false"
           />
-          <AudiobookVolumeButton
-            :volume="audiobook.volume"
-            @change="onVolumeChange"
-          />
+          <button
+            class="btn btn-ghost hidden @2xs:flex"
+            @click="volumeDialog.toggle()"
+          >
+            <VolumeXIcon
+              v-if="audiobook.volume == 0"
+              class="size-4"
+            />
+            <Volume1Icon
+              v-else-if="audiobook.volume <= 0.5"
+              class="size-4"
+            />
+            <Volume2Icon
+              v-else
+              class="size-4"
+            />
+          </button>
+          <button
+            class="btn btn-ghost hidden @xs:flex"
+            @click="rateDialog.toggle()"
+          >
+            <WatchIcon class="size-4" />
+          </button>
           <button
             class="btn btn-ghost hidden @sm:flex"
             @click="addNoteDialog.toggle()"
@@ -82,20 +101,41 @@
             <TagIcon class="size-4" />
           </button>
           <button
-            class="btn btn-ghost hidden @lg:flex"
+            class="btn btn-ghost hidden @md:flex"
             @click="notesDialog.toggle()"
           >
             <LayersIcon class="size-4" />
           </button>
           <Dropdown
             popoverId="audiobookPlayerPo"
-            styleClass="btn-ghost @lg:hidden"
+            styleClass="btn-ghost @md:hidden"
           >
             <template #button>
               <MoreVerticalIcon class="size-4" />
             </template>
             <template #content>
               <ul class="menu bg-base-100 w-64 rounded-sm shadow-sm">
+                <li class="@3xs:hidden">
+                  <button @click="outlinesDialog.toggle()">
+                    {{ $t("Outlines") }}
+                  </button>
+                </li>
+                <li class="@3xs:hidden">
+                  <MarkButton
+                    :item="audiobook"
+                    :listItem="true"
+                  />
+                </li>
+                <li class="@2xs:hidden">
+                  <button @click="volumeDialog.toggle()">
+                    {{ $t("Volume") }}
+                  </button>
+                </li>
+                <li class="@xs:hidden">
+                  <button @click="rateDialog.toggle()">
+                    {{ $t("Rate") }}
+                  </button>
+                </li>
                 <li class="@sm:hidden">
                   <button @click="addNoteDialog.toggle()">
                     {{ $t("Add note") }}
@@ -106,7 +146,7 @@
                     {{ $t("Marks") }}
                   </button>
                 </li>
-                <li class="@lg:hidden">
+                <li class="@md:hidden">
                   <button @click="notesDialog.toggle()">
                     {{ $t("Notes") }}
                   </button>
@@ -125,7 +165,16 @@
       ref="addNoteDialog"
       :item="audiobook"
     />
-
+    <AudiobookRateDialog
+      ref="rateDialog"
+      :rate="audiobook.rate"
+      @change="onRateChange"
+    />
+    <AudiobookVolumeDialog
+      ref="volumeDialog"
+      :volume="audiobook.volume"
+      @change="onVolumeChange"
+    />
     <MarksDialog
       ref="marksDialog"
       :item="audiobook"
@@ -181,6 +230,8 @@ const addNoteDialog = useTemplateRef("addNoteDialog");
 const marksDialog = useTemplateRef("marksDialog");
 const notesDialog = useTemplateRef("notesDialog");
 const outlinesDialog = useTemplateRef("outlinesDialog");
+const rateDialog = useTemplateRef("rateDialog");
+const volumeDialog = useTemplateRef("volumeDialog");
 
 async function onOpenMark(mark: Mark) {
   debug(`Opening mark: ${mark.name}`);

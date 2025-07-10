@@ -7,27 +7,29 @@
       <div class="collapse-content flex flex-col gap-4">
         <div class="@container flex flex-row items-center justify-center gap-4">
           <button
-            class="btn btn-ghost"
+            class="btn btn-ghost hidden @3xs:flex"
             @click="outlinesDialog!.toggle()"
           >
             <ListIcon class="size-4" />
           </button>
-          <MarkButton :item="ebook" />
+          <MarkButton
+            class="hidden @3xs:flex"
+            :item="ebook"
+            :listItem="false"
+          />
           <button
             :class="{ 'btn-ghost': !searching }"
-            class="btn"
+            class="btn hidden @2xs:flex"
             @click="onSearchClick"
           >
             <SearchIcon class="size-4" />
           </button>
-          <EbookScaleButton
-            :resizePolicy="ebook.resizePolicy"
-            :scale="ebook.scale"
-            @change="onScaleChange"
-            @fitHeight="onScaleToFitHeight"
-            @fitPage="onScaleToFitPage"
-            @fitWidth="onScaleToFitWidth"
-          />
+          <button
+            class="btn btn-ghost hidden @xs:flex"
+            @click="scaleDialog.toggle()"
+          >
+            <EyeIcon class="size-4" />
+          </button>
           <button
             class="btn btn-ghost hidden @sm:flex"
             @click="colorDialog.toggle()"
@@ -73,27 +75,52 @@
             <TagIcon class="size-4" />
           </button>
           <button
-            class="btn btn-ghost hidden @4xl:flex"
+            class="btn btn-ghost hidden @3xl:flex"
             @click="notesDialog.toggle()"
           >
             <LayersIcon class="size-4" />
           </button>
           <Dropdown
             popoverId="ebookViewerPo"
-            styleClass="btn-ghost @4xl:hidden"
+            styleClass="btn-ghost @3xl:hidden"
           >
             <template #button>
               <MoreVerticalIcon class="size-4" />
             </template>
             <template #content>
               <ul class="menu bg-base-100 w-64 rounded-sm shadow-sm">
+                <li class="@3xs:hidden">
+                  <button @click="outlinesDialog.toggle()">
+                    {{ $t("Outlines") }}
+                  </button>
+                </li>
+                <li class="@3xs:hidden">
+                  <MarkButton
+                    :item="ebook"
+                    :listItem="true"
+                  />
+                </li>
+                <li class="@2xs:hidden">
+                  <button @click="onSearchClick">
+                    <CheckIcon
+                      v-show="searching"
+                      class="size-4"
+                    />
+                    {{ $t("Search") }}
+                  </button>
+                </li>
+                <li class="@xs:hidden">
+                  <button @click="scaleDialog.toggle()">
+                    {{ $t("Scale") }}
+                  </button>
+                </li>
                 <li class="@sm:hidden">
                   <button @click="colorDialog.toggle()">
                     {{ $t("Color") }}
                   </button>
                 </li>
-                <li>
-                  <label class="label @md:hidden">
+                <li class="@md:hidden">
+                  <label class="label">
                     <input
                       v-model="ebook.flip"
                       class="checkbox"
@@ -123,7 +150,7 @@
                     {{ $t("Marks") }}
                   </button>
                 </li>
-                <li class="@4xl:hidden">
+                <li class="@3xl:hidden">
                   <button @click="notesDialog.toggle()">
                     {{ $t("Notes") }}
                   </button>
@@ -191,15 +218,12 @@
       >
         <ChevronLeftIcon class="size-4" />
       </button>
-      <EbookPositionButton
-        :color="ebook.color"
-        :flip="ebook.flip"
-        :pages="pages"
-        :position="ebook.position"
-        :rotate="ebook.rotate"
-        @change="onPositionChange"
-        @setPreview="onSetPreview"
-      />
+      <button
+        class="btn btn-circle"
+        @click="previewsDialog.toggle()"
+      >
+        {{ ebook.position.name }}
+      </button>
       <button
         :disabled="endIndex >= pages.length - 1"
         class="btn btn-circle self-center"
@@ -208,6 +232,7 @@
         <ChevronRightIcon class="size-4" />
       </button>
     </div>
+
     <AddNoteDialog
       ref="addNoteDialog"
       :item="ebook"
@@ -221,6 +246,26 @@
       ref="layoutDialog"
       :layout="ebook.layout"
       @change="onLayoutChange"
+    />
+    <EbookPagePreviewsDialog
+      ref="previewsDialog"
+      :color="ebook.color"
+      :flip="ebook.flip"
+      :pages="pages"
+      :rotate="ebook.rotate"
+      @change="onPositionChange"
+      @setPreview="onSetPreview"
+    />
+    <EbookRotateDialog
+      ref="rotateDialog"
+      :rotate="ebook.rotate"
+      @change="onRotateChange"
+    />
+    <EbookScaleDialog
+      ref="scaleDialog"
+      :resizePolicy="ebook.resizePolicy"
+      :scale="ebook.scale"
+      @change="onScaleChange"
     />
     <MarksDialog
       ref="marksDialog"
@@ -239,14 +284,10 @@
       :outlines="outlines"
       @openOutline="onOpenOutline"
     />
-    <EbookRotateDialog
-      ref="rotateDialog"
-      :rotate="ebook.rotate"
-      @change="onRotateChange"
-    />
   </div>
 </template>
 <script setup lang="ts">
+import { Constants } from "@/constants";
 import { type EbookBackend, useEbookBackend } from "@/backends";
 import { type Page } from "@/backends/ebook";
 import { type Metadata } from "@/backends/metadata";
@@ -309,7 +350,9 @@ const marksDialog = useTemplateRef("marksDialog");
 const notesDialog = useTemplateRef("notesDialog");
 const openUriDialog = useTemplateRef("openUriDialog");
 const outlinesDialog = useTemplateRef("outlinesDialog");
+const previewsDialog = useTemplateRef("previewsDialog");
 const rotateDialog = useTemplateRef("rotateDialog");
+const scaleDialog = useTemplateRef("scaleDialog");
 
 let startMatchesLength = 0;
 let scrollTimeoutId = 0;
@@ -338,75 +381,53 @@ async function onPositionChange(position: EbookPosition) {
   await loadLayout();
 }
 
-async function onScaleChange(scale: number) {
-  debug(`Changing to scale: ${scale}`);
-  if (scale == Infinity) throw new Error("Invalid scale");
-  ebook.scale = scale;
+async function onScaleChange(scale: number, resizePolicy: EbookResizePolicy) {
+  if (scale == -1 && resizePolicy == EbookResizePolicy.None)
+    throw new Error(`Invalid scale: ${scale}, resize policy: ${resizePolicy}`);
+
+  let newScale;
+
+  if (resizePolicy != EbookResizePolicy.None) {
+    if (!pages.value.length || !container.value) {
+      debug("Skipping scale change request due to empty pages list or unmounted container");
+      return;
+    }
+
+    let width = 0;
+    let height = 0;
+
+    if (startIndex.value >= 0) {
+      width += pages.value[startIndex.value].width;
+      height = Math.max(pages.value[endIndex.value].height, height);
+    }
+    const wScale = container.value.clientWidth / width;
+
+    if (ebook.layout != EbookLayout.Single && endIndex.value < pages.value.length) {
+      width += pages.value[endIndex.value].width;
+      height = Math.max(pages.value[endIndex.value].height, height);
+    }
+    const hScale = container.value.clientHeight / height;
+
+    if (resizePolicy == EbookResizePolicy.FitWidth) newScale = wScale;
+    else if (resizePolicy == EbookResizePolicy.FitHeight) newScale = hScale;
+    else if (resizePolicy == EbookResizePolicy.FitPage) newScale = Math.min(wScale, hScale);
+    else throw new Error(`Unknow resize policy: ${resizePolicy}`);
+
+    newScale = Math.min(Math.max(newScale, Constants.EBOOK_MIN_SCALE), Constants.EBOOK_MAX_SCALE);
+  } else {
+    newScale = scale;
+  }
+
+  debug(`Changing to scale: ${newScale}, resize policy: ${resizePolicy}`);
+
+  ebook.scale = newScale;
+  ebook.resizePolicy = resizePolicy;
   await loadImageData();
-  ebook.resizePolicy = EbookResizePolicy.None;
-}
-
-async function onScaleToFitWidth() {
-  debug(`Changing scale to fit width`);
-
-  if (!pages.value.length || !container.value) return;
-
-  let width = 0;
-  if (startIndex.value >= 0) width += pages.value[startIndex.value].width;
-  if (ebook.layout != EbookLayout.Single && endIndex.value < pages.value.length)
-    width += pages.value[endIndex.value].width;
-
-  const scale = container.value.clientWidth / width;
-  await onScaleChange(scale);
-  ebook.resizePolicy = EbookResizePolicy.FitWidth;
-}
-
-async function onScaleToFitHeight() {
-  debug(`Changing scale to fit height`);
-
-  if (!pages.value.length || !container.value) return;
-
-  let height = 0;
-  if (startIndex.value >= 0) height = pages.value[startIndex.value].height;
-  if (ebook.layout != EbookLayout.Single && endIndex.value < pages.value.length)
-    height = Math.max(pages.value[endIndex.value].height, height);
-
-  const scale = container.value.clientHeight / height;
-  await onScaleChange(scale);
-  ebook.resizePolicy = EbookResizePolicy.FitHeight;
-}
-
-async function onScaleToFitPage() {
-  debug(`Changing scale to fit page`);
-
-  if (!pages.value.length || !container.value) return;
-
-  let width = 0;
-  let height = 0;
-  if (startIndex.value >= 0) {
-    width += pages.value[startIndex.value].width;
-    height = Math.max(pages.value[endIndex.value].height, height);
-  }
-  if (ebook.layout != EbookLayout.Single && endIndex.value < pages.value.length) {
-    width += pages.value[endIndex.value].width;
-    height = Math.max(pages.value[endIndex.value].height, height);
-  }
-
-  const scale = Math.min(
-    container.value.clientWidth / width,
-    container.value.clientHeight / height,
-  );
-
-  await onScaleChange(scale);
-  ebook.resizePolicy = EbookResizePolicy.FitPage;
 }
 
 function onContainerResize() {
   debug(`Container resized, adopting resize policy: ${ebook.resizePolicy}`);
-
-  if (ebook.resizePolicy == EbookResizePolicy.FitWidth) onScaleToFitWidth();
-  else if (ebook.resizePolicy == EbookResizePolicy.FitHeight) onScaleToFitHeight();
-  else if (ebook.resizePolicy == EbookResizePolicy.FitPage) onScaleToFitPage();
+  if (ebook.resizePolicy != EbookResizePolicy.None) onScaleChange(-1, ebook.resizePolicy);
 }
 
 function onSearchClick() {
@@ -657,7 +678,6 @@ async function open(ebook: Ebook) {
   let fitScale = false;
   if (ebook.openingFirstTime) {
     if (window.screen.width >= DUAL_PAGE_WIDTH) ebook.layout = EbookLayout.DualEnd;
-    fitScale = true;
     ebook.openingFirstTime = false;
   }
 
@@ -669,7 +689,6 @@ async function open(ebook: Ebook) {
   emit("metadata", await backend!.getMetadata());
 
   await loadLayout();
-  if (fitScale) await onScaleToFitPage();
 }
 
 async function close(ebook: Ebook) {

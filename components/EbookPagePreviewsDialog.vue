@@ -1,11 +1,4 @@
 <template>
-  <button
-    v-if="pages[position.value]"
-    class="btn btn-circle"
-    @click="onClick"
-  >
-    {{ position.name }}
-  </button>
   <Dialog
     ref="dialog"
     :autoWidth="true"
@@ -68,7 +61,6 @@ const { f, debug } = useLogger("ebookPositionButton");
 
 interface Props {
   pages: Page[];
-  position: EbookPosition;
   color: EbookColor;
   flip: boolean;
   rotate: number;
@@ -79,7 +71,7 @@ interface Emits {
   setPreview: [index: number, setPreviewCb: (preview: Blob) => void];
 }
 
-const { pages, position, color, flip, rotate } = defineProps<Props>();
+const { pages, color, flip, rotate } = defineProps<Props>();
 const emit = defineEmits<Emits>();
 
 const input = ref("");
@@ -165,11 +157,6 @@ async function onPreviewMounted(
   previews.set(index, component);
 }
 
-function onClick() {
-  dialog.value!.show();
-  setPreviews();
-}
-
 function emitChange(index: number) {
   emit("change", pages[index].position);
   dialog.value!.hide();
@@ -181,6 +168,13 @@ function onEnter() {
   const [index] = visiblePreviews;
   emitChange(index);
 }
+
+function toggle() {
+  dialog.value!.toggle();
+  if (dialog.value!.isShown()) setPreviews();
+}
+
+defineExpose({ toggle });
 
 watch([() => color], () => {
   debug(`Clearing previews as color changed`);

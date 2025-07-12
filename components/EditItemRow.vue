@@ -1,11 +1,11 @@
 <template>
-  <li class="list-row items-center">
+  <li class="list-row @container items-center">
     <template v-if="!editing">
       <MusicIcon
         v-if="item.type == ItemType.Audiobook"
         class="size-4"
       />
-      <FileTextIcon
+      <BookIcon
         v-else-if="item.type == ItemType.Ebook"
         class="size-4"
       />
@@ -18,9 +18,35 @@
           {{ item.file.name }}
         </p>
       </div>
+      <button
+        class="btn btn-ghost hidden @lg:flex"
+        :disabled="position == 0"
+        @click="$emit('move', position, position - 1)"
+      >
+        <ChevronUpIcon class="size-4" />
+      </button>
+      <button
+        class="btn btn-ghost hidden @lg:flex"
+        :disabled="position == length - 1"
+        @click="$emit('move', position, position + 1)"
+      >
+        <ChevronDownIcon class="size-4" />
+      </button>
+      <button
+        class="btn btn-ghost hidden @lg:flex"
+        @click="editing = true"
+      >
+        <EditIcon class="size-4" />
+      </button>
+      <button
+        class="btn btn-ghost hidden @lg:flex"
+        @click="$emit('remove')"
+      >
+        <TrashIcon class="size-4" />
+      </button>
       <Dropdown
         :popoverId="item.id"
-        styleClass="btn-ghost"
+        styleClass="btn-ghost @lg:hidden"
       >
         <template #button>
           <MoreVerticalIcon class="size-4" />

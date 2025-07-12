@@ -4,7 +4,7 @@
       class="collapse"
       :class="{ 'collapse-open': !focus }"
     >
-      <div class="collapse-content flex flex-col gap-4">
+      <div class="collapse-content @container flex flex-col gap-4">
         <div class="@container flex flex-row items-center justify-center gap-4">
           <button
             class="btn btn-ghost hidden @3xs:flex"
@@ -14,8 +14,8 @@
           </button>
           <MarkButton
             class="hidden @3xs:flex"
+            :button="true"
             :item="ebook"
-            :listItem="false"
           />
           <button
             :class="{ 'btn-ghost': !searching }"
@@ -96,8 +96,8 @@
                 </li>
                 <li class="@3xs:hidden">
                   <MarkButton
+                    :button="false"
                     :item="ebook"
-                    :listItem="true"
                   />
                 </li>
                 <li class="@2xs:hidden">
@@ -222,7 +222,7 @@
         class="btn btn-circle"
         @click="previewsDialog.toggle()"
       >
-        {{ ebook.position.name }}
+        {{ pages.length != 0 ? pages[ebook.position.value].position.name : "" }}
       </button>
       <button
         :disabled="endIndex >= pages.length - 1"

@@ -1,15 +1,14 @@
 <template>
   <Dialog
     ref="dialog"
-    :autoWidth="true"
+    styleClass="@2xl:w-2xl max-w-none"
   >
-    <div class="flex w-[75vw] flex-col gap-4">
+    <div class="flex h-[75vh] flex-col gap-4">
       <div class="flex flex-row gap-4">
-        <input
-          v-model="input"
-          class="input grow"
-          :placeholder="$t('Go to page…')"
-          @keyup.enter="onEnter"
+        <TitleBar
+          class="grow"
+          subtitle=""
+          :title="$t('Pages')"
         />
         <button
           class="btn btn-ghost"
@@ -18,9 +17,15 @@
           <XIcon class="size-4" />
         </button>
       </div>
+      <input
+        v-model="input"
+        class="input w-full"
+        :placeholder="$t('Go to page…')"
+        @keyup.enter="onEnter"
+      />
       <div
         ref="container"
-        class="flex h-[75vh] grow flex-col overflow-scroll"
+        class="flex h-0 grow flex-col overflow-scroll"
       >
         <template v-if="observer">
           <div

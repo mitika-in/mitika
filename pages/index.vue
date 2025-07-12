@@ -1,13 +1,13 @@
 <template>
   <div class="flex flex-col gap-8 p-4">
-    <header class="flex flex-row items-center gap-4">
+    <header class="@container flex flex-row items-center gap-4">
       <button
         class="btn btn-ghost"
         @click="onOpenClick"
       >
         <FolderIcon class="size-4" />
       </button>
-      <div class="flex grow justify-center lg:justify-end">
+      <div class="flex grow justify-center @lg:justify-end">
         <label class="input flex items-center gap-2">
           <SearchIcon class="size-4" />
           <input

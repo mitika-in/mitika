@@ -1,23 +1,34 @@
 <template>
-  <li class="list-row">
+  <li class="list-row @container">
     <template v-if="state == State.Display">
       <button
-        class="btn"
+        class="list-col-grow cursor-pointer text-start"
         @click="$emit('click')"
       >
+        {{ note.name }}
+        &nbsp;
         {{ formatPosition(note.position, type) }}
       </button>
-      <p class="list-col-grow self-center">
-        {{ note.name }}
-      </p>
       <textarea
         v-model="note.description"
         class="textarea list-col-wrap col-start-1 col-end-4 max-h-[25vh] w-full"
         readonly="true"
       />
+      <button
+        class="btn btn-ghost hidden @lg:flex"
+        @click="state = State.Edit"
+      >
+        <EditIcon class="size-4" />
+      </button>
+      <button
+        class="btn btn-ghost hidden @lg:flex"
+        @click="state = State.Remove"
+      >
+        <TrashIcon class="size-4" />
+      </button>
       <Dropdown
         :popoverId="`notesDialogRowPo_${note.id}`"
-        styleClass="btn-ghost"
+        styleClass="btn-ghost @lg:hidden"
       >
         <template #button>
           <MoreVerticalIcon class="size-4" />
@@ -46,16 +57,16 @@
           class="textarea max-h-[25vh] w-full"
           :placeholder="$t('Description of the note')"
         />
-        <div class="flex flex-col justify-end gap-2 lg:flex-row">
+        <div class="flex flex-col justify-end gap-2 @lg:flex-row">
           <button
-            class="btn btn-primary lg:w-32"
+            class="btn btn-primary @lg:w-32"
             :disabled="name.length == 0"
             @click="onSaveClick"
           >
             {{ $t("Save") }}
           </button>
           <button
-            class="btn lg:w-32"
+            class="btn @lg:w-32"
             @click="state = State.Display"
           >
             {{ $t("Cancel") }}

@@ -1,21 +1,20 @@
 <template>
-  <button
-    :class="{ 'btn btn-ghost': !listItem }"
-    @click="onClick"
-  >
-    <template v-if="listItem">
-      <CheckIcon
-        v-show="marked"
-        class="size-4"
-      />
-      {{ $t("Mark") }}
-    </template>
-    <BookmarkIcon
-      v-else
-      class="size-4"
-      :class="{ 'fill-current': marked }"
+  <label :class="{ 'btn btn-ghost': button }">
+    <input
+      :class="{ hidden: button }"
+      class="checkbox"
+      type="checkbox"
+      @change="onChange"
     />
-  </button>
+    <BookmarkIcon
+      v-show="button"
+      class="size-4"
+      :class="{ 'fill-current': mark != null }"
+    />
+    <span :class="{ hidden: button }">
+      {{ $t("Mark") }}
+    </span>
+  </label>
 </template>
 <script setup lang="ts">
 import { DatabaseEvent, useDatabase } from "@/database";
@@ -26,42 +25,33 @@ const { t } = useI18n();
 
 interface Props {
   item: Item;
-  listItem: boolean;
+  button: boolean;
 }
 
 const { item } = defineProps<Props>();
 
 const database = await useDatabase();
-const marks: Ref<Mark[]> = ref([]);
 
-const marked = computed(() => {
-  return marks.value.some((mark) => mark.position.value == item.position.value);
-});
+const mark: Ref<Mark | null> = ref(null);
 
-async function delMark() {
-  const mark = marks.value.find((mark) => mark.position.value == item.position.value);
-  if (!mark) throw new TypeError(`Unable to find mark on position: ${item.position.value}`);
+async function onChange() {
+  if (mark.value) {
+    await database.delMark(toValue(mark));
+    return;
+  }
 
-  await database.delMark(mark);
-}
-
-async function addMark() {
   const prettyPosition = formatPosition(item.position, item.type);
-  const mark = createMark(
+  const newMark = createMark(
     item.id,
     t("On {position}", { position: prettyPosition }),
     toRaw(item.position),
   );
-  await database.putMark(mark);
-}
-
-async function onClick() {
-  if (marked.value) await delMark();
-  else await addMark();
+  await database.putMark(newMark);
 }
 
 async function onMarksChanged() {
-  marks.value = await database.getMarks(item.id);
+  const marks = await database.getMarks(item.id);
+  mark.value = marks.find((mark) => mark.position.value == item.position.value);
 }
 
 watch(

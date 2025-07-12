@@ -1,5 +1,5 @@
 <template>
-  <div class="flex grow flex-col justify-center gap-4 lg:flex-row">
+  <div class="flex grow flex-col justify-center gap-4 @lg:flex-row">
     <div class="join">
       <label
         class="join-item input"

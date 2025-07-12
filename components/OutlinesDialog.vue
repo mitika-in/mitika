@@ -1,11 +1,11 @@
 <template>
   <Dialog ref="dialog">
-    <div class="flex flex-col gap-4">
+    <div class="flex h-[75vh] flex-col gap-4">
       <div class="flex flex-row gap-4">
-        <input
-          v-model="search"
-          class="input grow"
-          :placeholder="$t('Search…')"
+        <TitleBar
+          class="grow"
+          subtitle=""
+          :title="$t('Outlines')"
         />
         <button
           class="btn btn-ghost"
@@ -14,7 +14,12 @@
           <XIcon class="size-4" />
         </button>
       </div>
-      <div class="flex h-[75vh] grow flex-col overflow-scroll">
+      <input
+        v-model="search"
+        class="input w-full"
+        :placeholder="$t('Search…')"
+      />
+      <div class="flex h-0 grow flex-col overflow-scroll">
         <ol class="menu peer w-full">
           <OutlinesDialogRow
             v-for="outline in outlines"

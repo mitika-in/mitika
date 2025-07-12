@@ -3,7 +3,7 @@
     <button
       v-show="book.focus"
       class="btn btn-circle absolute end-4 top-4 z-2"
-      @click="onFocusToggle"
+      @click="onFocusClick"
     >
       <ZapOffIcon class="size-4" />
     </button>
@@ -11,18 +11,57 @@
       class="collapse"
       :class="{ 'collapse-open': !book.focus }"
     >
-      <header class="collapse-content flex flex-row gap-4">
+      <header class="collapse-content @container flex flex-row gap-4">
         <button
           class="btn btn-ghost"
           @click="itemsDialog!.toggle()"
         >
           <FileIcon class="size-4" />
         </button>
+        <div
+          v-if="audiobook && ebook"
+          class="join hidden @2xl:flex"
+        >
+          <label
+            :class="{ 'btn-ghost': !book.openAudiobook }"
+            class="btn join-item"
+          >
+            <input
+              v-model="book.openAudiobook"
+              class="hidden"
+              type="checkbox"
+            />
+            <MusicIcon class="size-4" />
+          </label>
+          <label
+            :class="{ 'btn-ghost': !book.openEbook }"
+            class="btn join-item"
+          >
+            <input
+              v-model="book.openEbook"
+              class="hidden"
+              type="checkbox"
+            />
+            <BookIcon class="size-4" />
+          </label>
+        </div>
         <TitleBar
           class="grow"
           :subtitle="book.authors.join(', ')"
           :title="book.name"
         />
+        <button
+          class="btn btn-ghost hidden @2xl:flex"
+          @click="onFocusClick"
+        >
+          <ZapIcon class="size-4" />
+        </button>
+        <NuxtLink
+          class="btn btn-ghost hidden @2xl:flex"
+          :to="`/edit/${book.id}`"
+        >
+          <EditIcon class="size-4" />
+        </NuxtLink>
         <Dropdown
           popoverId="openPo"
           styleClass="btn-ghost"
@@ -32,7 +71,10 @@
           </template>
           <template #content>
             <ul class="menu bg-base-100 w-64 rounded-sm shadow-sm">
-              <li v-if="audiobook && ebook">
+              <li
+                v-if="audiobook && ebook"
+                class="@2xl:hidden"
+              >
                 <details>
                   <summary>
                     {{ $t("View") }}
@@ -61,12 +103,12 @@
                   </ul>
                 </details>
               </li>
-              <li>
-                <button @click="onFocusToggle">
+              <li class="@2xl:hidden">
+                <button @click="onFocusClick">
                   {{ $t("Focus mode") }}
                 </button>
               </li>
-              <li>
+              <li class="@2xl:hidden">
                 <NuxtLink :to="`/edit/${book.id}`">
                   {{ $t("Edit") }}
                 </NuxtLink>
@@ -155,7 +197,7 @@ const coverUrl: ComputedRef<string | null> = computed((oldCoverUrl) => {
   return URL.createObjectURL(cover.value);
 });
 
-function onFocusToggle() {
+function onFocusClick() {
   debug(`Changing to focus: ${!book.value.focus}`);
   book.value.focus = !book.value.focus;
 }

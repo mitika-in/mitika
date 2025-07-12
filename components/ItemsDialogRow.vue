@@ -4,25 +4,20 @@
       v-if="item.type == ItemType.Audiobook"
       class="size-4"
     />
-    <FileTextIcon
+    <BookIcon
       v-else-if="item.type == ItemType.Ebook"
       class="size-4"
     />
     <template v-else>{{ throwError(item.type) }}</template>
-    <div class="list-col-grow flex flex-row gap-2">
-      <p>
-        {{ item.name }}
-      </p>
-      <p class="opacity-75">
-        {{ item.file.name }}
-      </p>
-    </div>
     <button
-      class="btn btn-ghost"
+      class="list-col-grow cursor-pointer text-start"
       @click="$emit('click')"
     >
-      <BookOpenIcon class="size-4" />
+      {{ item.name }}
     </button>
+    <p class="list-col-wrap opacity-75">
+      {{ item.file.name }}
+    </p>
   </li>
 </template>
 <script setup lang="ts">

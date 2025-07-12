@@ -1,5 +1,5 @@
 <template>
-  <div class="flex flex-col gap-8 p-4">
+  <div class="@container flex flex-col gap-8 p-4">
     <header class="flex flex-row items-center gap-4">
       <button
         class="btn btn-ghost"
@@ -20,7 +20,7 @@
         {{ $t("Save") }}
       </button>
     </header>
-    <main class="flex h-0 grow flex-col gap-4 overflow-scroll lg:w-lg lg:self-center">
+    <main class="flex h-0 grow flex-col gap-4 overflow-scroll @2xl:w-2xl @2xl:self-center">
       <fieldset class="fieldset">
         <label class="fieldset-label">
           {{ $t("Name") }}
@@ -73,8 +73,7 @@
             :item="item"
             :position="i"
             :length="items.length"
-            @moveDown="onItemMove(i, i + 1)"
-            @moveUp="onItemMove(i, i - 1)"
+            @move="(src, dst) => onItemMove(item, src, dst)"
             @remove="onItemRemove(item)"
           />
         </ol>
@@ -207,7 +206,7 @@ function onTagRemove(tag: string) {
   tags.value.splice(idx, 1);
 }
 
-function onItemMove(src: number, dst: number) {
+function onItemMove(item: Item, src: number, dst: number) {
   const normDst = Math.min(Math.max(dst, 0), items.value.length - 1);
   const [element] = items.value.splice(src, 1);
   items.value.splice(normDst, 0, element);

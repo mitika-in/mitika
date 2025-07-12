@@ -1,11 +1,11 @@
 <template>
   <dialog
     ref="dialog"
-    class="modal"
+    class="modal @container"
   >
     <div
+      :class="styleClass"
       class="modal-box"
-      :class="{ 'w-auto max-w-none': autoWidth }"
     >
       <slot />
     </div>
@@ -13,7 +13,7 @@
 </template>
 <script setup lang="ts">
 interface Props {
-  autoWidth?: boolean;
+  styleClass?: string;
 }
 
 defineProps<Props>();

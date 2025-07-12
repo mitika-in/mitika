@@ -1,15 +1,14 @@
 <template>
   <Dialog
     ref="dialog"
-    :autoWidth="true"
+    styleClass="@2xl:w-2xl max-w-none"
   >
-    <div class="flex w-[75vw] flex-col gap-4">
+    <div class="flex h-[75vh] flex-col gap-4">
       <div class="flex flex-row gap-4">
-        <input
-          v-model="search"
-          class="input grow"
-          :placeholder="$t('Search…')"
-          @keyup.enter="onEnter"
+        <TitleBar
+          class="grow"
+          subtitle=""
+          :title="$t('Notes')"
         />
         <button
           class="btn btn-ghost"
@@ -18,7 +17,13 @@
           <XIcon class="size-4" />
         </button>
       </div>
-      <div class="flex h-[75vh] grow flex-col overflow-scroll">
+      <input
+        v-model="search"
+        class="input w-full"
+        :placeholder="$t('Search…')"
+        @keyup.enter="onEnter"
+      />
+      <div class="flex h-0 grow flex-col overflow-scroll">
         <ol class="list peer">
           <NotesDialogRow
             v-for="note in filteredNotes"

@@ -5,10 +5,9 @@
         v-if="outline.children.length == 0"
         @click="$emit('click', outline)"
       >
-        <span class="flex flex-row gap-2"
-          ><span>
-            {{ outline.name }}
-          </span>
+        <span>
+          {{ outline.name }}
+          &nbsp;
           <span class="italic">
             {{ position }}
           </span>
@@ -16,14 +15,7 @@
       </button>
       <details v-else>
         <summary>
-          <span class="flex flex-row gap-2"
-            ><span>
-              {{ outline.name }}
-            </span>
-            <span class="italic">
-              {{ position }}
-            </span>
-          </span>
+          {{ outline.name }}
         </summary>
         <ul>
           <OutlinesDialogRow

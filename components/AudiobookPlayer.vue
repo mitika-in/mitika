@@ -62,8 +62,8 @@
           </button>
           <MarkButton
             class="hidden @3xs:flex"
+            :button="true"
             :item="audiobook"
-            :listItem="false"
           />
           <button
             class="btn btn-ghost hidden @2xs:flex"
@@ -122,8 +122,8 @@
                 </li>
                 <li class="@3xs:hidden">
                   <MarkButton
+                    :button="false"
                     :item="audiobook"
-                    :listItem="true"
                   />
                 </li>
                 <li class="@2xs:hidden">

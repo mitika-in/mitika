@@ -7,22 +7,24 @@
         :title="title"
       />
     </header>
-    <main class="flex max-w-lg flex-col gap-4">
+    <main class="@container flex max-w-lg flex-col gap-4">
       <p>
         Something went wrong. You can try restarting the application and if the issue persists,
         please check the logs and report it to the developers.
       </p>
       <div class="flex flex-col items-center gap-4">
         <NuxtLink
-          class="btn btn-primary w-full lg:w-64"
+          class="btn btn-primary w-full @lg:w-64"
           to="/"
-          >Restart</NuxtLink
         >
+          Restart
+        </NuxtLink>
         <NuxtLink
-          class="btn btn-secondary w-full lg:w-64"
+          class="btn btn-secondary w-full @lg:w-64"
           to="/logs"
-          >Logs</NuxtLink
         >
+          Logs
+        </NuxtLink>
       </div>
     </main>
   </div>

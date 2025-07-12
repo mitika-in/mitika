@@ -1,18 +1,31 @@
 <template>
-  <li class="list-row">
+  <li class="list-row @container">
     <template v-if="state == State.Display">
       <button
-        class="btn"
+        class="list-col-grow cursor-pointer text-start"
         @click="$emit('click')"
       >
-        {{ formatPosition(mark.position, type) }}
-      </button>
-      <p class="list-col-grow self-center">
         {{ mark.name }}
-      </p>
+        &nbsp;
+        <span class="italic">
+          {{ formatPosition(mark.position, type) }}
+        </span>
+      </button>
+      <button
+        class="btn btn-ghost hidden @lg:flex"
+        @click="state = State.Edit"
+      >
+        <EditIcon class="size-4" />
+      </button>
+      <button
+        class="btn btn-ghost hidden @lg:flex"
+        @click="state = State.Remove"
+      >
+        <TrashIcon class="size-4" />
+      </button>
       <Dropdown
         :popoverId="`marksDialogRowPo_${mark.id}`"
-        styleClass="btn-ghost"
+        styleClass="btn-ghost @lg:hidden"
       >
         <template #button>
           <MoreVerticalIcon class="size-4" />
@@ -62,7 +75,7 @@
         class="btn btn-error"
         @click="onRemoveClick"
       >
-        <TrashIcon class="size-4" />
+        <CheckIcon class="size-4" />
       </button>
     </template>
     <template v-else>{{ throwError() }}</template>

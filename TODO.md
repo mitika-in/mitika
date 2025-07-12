@@ -22,10 +22,6 @@
 
 - Multi-source support.
 
-## UI
-
-- Focused mode.
-
 ## UX
 
 - Add loading screen.
@@ -35,3 +31,4 @@
 ## Code
 
 - Use consistent structure (inside script).
+- Simplify status page layout

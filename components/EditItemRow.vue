@@ -45,8 +45,9 @@
         <TrashIcon class="size-4" />
       </button>
       <Dropdown
+        buttonClass="btn-ghost @lg:hidden"
+        dropdownClass="dropdown-end"
         :popoverId="item.id"
-        styleClass="btn-ghost @lg:hidden"
       >
         <template #button>
           <MoreVerticalIcon class="size-4" />

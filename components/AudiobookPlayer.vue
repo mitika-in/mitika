@@ -107,8 +107,9 @@
             <LayersIcon class="size-4" />
           </button>
           <Dropdown
+            buttonClass="btn-ghost @md:hidden"
+            dropdownClass="dropdown-end"
             popoverId="audiobookPlayerPo"
-            styleClass="btn-ghost @md:hidden"
           >
             <template #button>
               <MoreVerticalIcon class="size-4" />

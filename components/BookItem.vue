@@ -21,8 +21,9 @@
       </div>
     </button>
     <Dropdown
+      buttonClass="btn-ghost"
+      dropdownClass="dropdown-end"
       :popoverId="`bookRowPo_${book.id}`"
-      styleClass="btn-ghost"
     >
       <template #button>
         <MoreVerticalIcon class="size-4" />

@@ -63,8 +63,9 @@
           <EditIcon class="size-4" />
         </NuxtLink>
         <Dropdown
+          buttonClass="btn-ghost"
+          dropdownClass="dropdown-end"
           popoverId="openPo"
-          styleClass="btn-ghost"
         >
           <template #button>
             <MenuIcon class="size-4" />

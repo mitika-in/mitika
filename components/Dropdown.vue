@@ -1,14 +1,14 @@
 <template>
   <button
+    :class="buttonClass"
     class="btn"
-    :class="styleClass"
-    :classx="{ 'btn-ghost': ghostBtn, 'w-full md:w-64': responsive }"
     :popovertarget="popoverId"
     :style="`anchor-name:--anchor-${popoverId}`"
   >
     <slot name="button"></slot>
   </button>
   <div
+    :class="dropdownClass"
     class="dropdown"
     :id="popoverId"
     popover
@@ -19,11 +19,10 @@
 </template>
 <script setup lang="ts">
 interface Props {
-  ghostBtn?: boolean;
-  styleClass?: string;
+  buttonClass: string;
+  dropdownClass: string;
   popoverId: string;
-  responsive?: boolean;
 }
 
-const { ghostBtn = true, responsive = false } = defineProps<Props>();
+const { dropdownClass } = defineProps<Props>();
 </script>

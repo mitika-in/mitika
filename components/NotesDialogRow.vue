@@ -27,8 +27,9 @@
         <TrashIcon class="size-4" />
       </button>
       <Dropdown
+        buttonClass="btn-ghost @lg:hidden"
+        dropdownClass="dropdown-end"
         :popoverId="`notesDialogRowPo_${note.id}`"
-        styleClass="btn-ghost @lg:hidden"
       >
         <template #button>
           <MoreVerticalIcon class="size-4" />

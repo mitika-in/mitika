@@ -81,8 +81,9 @@
             <LayersIcon class="size-4" />
           </button>
           <Dropdown
+            buttonClass="btn-ghost @3xl:hidden"
+            dropdownClass="dropdown-end"
             popoverId="ebookViewerPo"
-            styleClass="btn-ghost @3xl:hidden"
           >
             <template #button>
               <MoreVerticalIcon class="size-4" />

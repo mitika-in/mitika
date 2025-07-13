@@ -19,8 +19,9 @@
         </label>
       </div>
       <Dropdown
+        buttonClass="btn-ghost"
+        dropdownClass="dropdown-end"
         popoverId="indexPo"
-        styleClass="btn-ghost"
       >
         <template #button>
           <MenuIcon class="size-4" />

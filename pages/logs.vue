@@ -66,7 +66,6 @@
       <Dropdown
         v-if="allDomains.size != 0"
         popoverId="logsPo"
-        styleClass="w-full md:w-64"
       >
         <template #button> Domains</template>
         <template #content>

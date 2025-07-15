@@ -224,7 +224,7 @@ async function refreshBooks() {
 }
 
 function onTagChange(tag: string) {
-  let idx = selectedTags.value.indexOf(tag);
+  const idx = selectedTags.value.indexOf(tag);
   if (idx == -1) selectedTags.value.push(tag);
   else selectedTags.value.splice(idx, 1);
 }

@@ -401,12 +401,13 @@ async function onScaleChange(scale: number, resizePolicy: EbookResizePolicy) {
       width += pages.value[startIndex.value].width;
       height = Math.max(pages.value[endIndex.value].height, height);
     }
-    const wScale = container.value.clientWidth / width;
 
     if (ebook.layout != EbookLayout.Single && endIndex.value < pages.value.length) {
       width += pages.value[endIndex.value].width;
       height = Math.max(pages.value[endIndex.value].height, height);
     }
+
+    const wScale = container.value.clientWidth / width;
     const hScale = container.value.clientHeight / height;
 
     if (resizePolicy == EbookResizePolicy.FitWidth) newScale = wScale;

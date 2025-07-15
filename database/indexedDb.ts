@@ -196,7 +196,7 @@ export class IndexedDb extends Database {
 
   async getItems(parentId: string | null): Promise<Item[]> {
     const items: Item[] = await this.getAll("items", parentId);
-    return items;
+    return items.sort((a, b) => a.order - b.order);
   }
 
   async delItem(item: Item) {

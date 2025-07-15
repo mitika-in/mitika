@@ -18,7 +18,6 @@
         v-model="search"
         class="input w-full"
         :placeholder="$t('Search…')"
-        @keyup.enter="onEnter"
       />
       <div class="flex h-0 grow flex-col overflow-scroll">
         <ol class="list peer">
@@ -67,11 +66,6 @@ const search = ref("");
 const filteredItems = computed(() => {
   return items.value.filter((item) => item.name.toLowerCase().includes(search.value.toLowerCase()));
 });
-
-function onEnter() {
-  if (filteredItems.value.length == 0) return;
-  emit("openItem", filteredItems.value[0], true);
-}
 
 function onClick(item: Item) {
   emit("openItem", item, true);

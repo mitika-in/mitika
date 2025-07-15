@@ -21,7 +21,6 @@
         v-model="input"
         class="input w-full"
         :placeholder="$t('Go to page…')"
-        @keyup.enter="onEnter"
       />
       <div
         ref="container"
@@ -40,7 +39,7 @@
               :flip="flip"
               :name="page.position.name"
               :rotate="rotate"
-              @click="emitChange(index)"
+              @click="onClick(index)"
             />
           </div>
           <Status
@@ -162,16 +161,9 @@ async function onPreviewMounted(
   previews.set(index, component);
 }
 
-function emitChange(index: number) {
+function onClick(index: number) {
   emit("change", pages[index].position);
   dialog.value!.hide();
-}
-
-function onEnter() {
-  if (visiblePreviews.size == 0) return;
-
-  const [index] = visiblePreviews;
-  emitChange(index);
 }
 
 function toggle() {

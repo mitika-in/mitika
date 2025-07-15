@@ -21,7 +21,6 @@
         v-model="search"
         class="input w-full"
         :placeholder="$t('Search…')"
-        @keyup.enter="onEnter"
       />
       <div class="flex h-0 grow flex-col overflow-scroll">
         <ol class="list peer">
@@ -76,11 +75,6 @@ const filteredNotes = computed(() => {
 const emptyStateDescription = computed(() =>
   search.value.length == 0 ? "Add a note to display it here." : "No matching note exists.",
 );
-
-function onEnter() {
-  if (filteredNotes.value.length == 0) return;
-  emit("openNote", filteredNotes.value[0]);
-}
 
 function onClick(note: Note) {
   emit("openNote", note);

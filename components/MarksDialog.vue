@@ -21,7 +21,6 @@
         v-model="search"
         class="input w-full"
         :placeholder="$t('Search…')"
-        @keyup.enter="onEnter"
       />
       <div class="flex h-0 grow flex-col overflow-scroll">
         <ol class="list peer">
@@ -74,11 +73,6 @@ const emptyStateDescription = computed(() =>
 const filteredMarks = computed(() => {
   return marks.value.filter((mark) => mark.name.toLowerCase().includes(search.value.toLowerCase()));
 });
-
-function onEnter() {
-  if (filteredMarks.value.length == 0) return;
-  emit("openMark", filteredMarks.value[0]);
-}
 
 function onClick(mark: Mark) {
   emit("openMark", mark);

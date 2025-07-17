@@ -60,8 +60,11 @@ import {
   type ExternalLinkNode,
   type InternalLinkNode,
 } from "@/backends/ebook/node";
+import { useLogger } from "@/logging";
 import { type Match } from "@/backends/ebook";
 import { type EbookPosition } from "@/models";
+
+const { debug } = useLogger("ebookPage");
 
 interface Props {
   width: number;
@@ -193,6 +196,63 @@ function scrollToMatchIndex(index: number) {
   currentMatchIndex.value = index;
 }
 
+function scrollTo(x: number, y: number) {
+  if (!inner.value) return;
+
+  debug(`Scrolling to x: ${x}, y: ${y}`);
+
+  const point = document.createElement("div");
+  point.style.position = "absolute";
+  point.style.left = `${x * scale}px`;
+  point.style.top = `${y * scale}px`;
+  inner.value.append(point);
+  point.scrollIntoView({ block: "start", inline: "start" });
+  point.remove();
+}
+
+function rotateByTheta(x: number, y: number, t: number, cX = 0, cY = 0): { x: number; y: number } {
+  const angle = (t * Math.PI) / 180;
+  const sin = Math.sin(angle);
+  const cos = Math.cos(angle);
+  const nX = (x - cX) * cos - (y - cY) * sin + cX;
+  const nY = (x - cX) * sin + (y - cY) * cos + cY;
+  return { x: nX, y: nY };
+}
+
+function localizePoints(points: { x: number; y: number }[]): { x: number; y: number }[] {
+  const { x: rX, y: rY, width: rW, height: rH } = root.value.getBoundingClientRect();
+
+  const oCX = rX + (width * scale) / 2;
+  const oCY = rY + (height * scale) / 2;
+  const nCX = rX + rW / 2;
+  const nCY = rY + rH / 2;
+
+  const dX = nCX - oCX;
+  const dY = nCY - oCY;
+
+  const localizedPoints = [];
+
+  for (const { x, y } of points) {
+    const unTranslatedX = x - dX;
+    const unTranslatedY = y - dY;
+
+    const { x: unRotatedX, y: unRotatedY } = rotateByTheta(
+      unTranslatedX,
+      unTranslatedY,
+      -rotate,
+      oCX,
+      oCY,
+    );
+
+    const relativeX = unRotatedX - rX;
+    const relativeY = unRotatedY - rY;
+
+    localizedPoints.push({ x: relativeX / scale, y: relativeY / scale });
+  }
+
+  return localizedPoints;
+}
+
 function getVisibleRatio(): number {
   if (transparent || !root.value || !root.value.parentElement) return 0;
 
@@ -217,64 +277,18 @@ function getVisibleRatio(): number {
   return visibleArea / totalArea;
 }
 
-function transform(x: number, y: number, t: number, cX = 0, cY = 0): { x: number; y: number } {
-  const angle = (t * Math.PI) / 180;
-  const sin = Math.sin(angle);
-  const cos = Math.cos(angle);
-  const nX = (x - cX) * cos - (y - cY) * sin + cX;
-  const nY = (x - cX) * sin + (y - cY) * cos + cY;
-  return { x: nX, y: nY };
-}
-
-function getInnerAbsoluteTopLeft(): { x: number; y: number } {
-  if (transparent || !root.value || !root.value.parentElement) return { x: 0, y: 0 };
-
-  const { left: rX, top: rY, width: rW, height: rH } = root.value.getBoundingClientRect();
-
-  const iCX = rX + (width * scale) / 2;
-  const iCY = rY + (height * scale) / 2;
-
-  const rCX = rX + rW / 2;
-  const rCY = rY + rH / 2;
-
-  const deltaX = rCX - iCX;
-  const deltaY = rCY - iCY;
-
-  const { x: nX, y: nY } = transform(rX, rY, rotate, iCX, iCY);
-  const iX = nX + deltaX;
-  const iY = nY + deltaY;
-
-  return { x: iX, y: iY };
-}
-
 function getVisibleTopLeft(): { x: number; y: number } {
   if (transparent || !root.value || !root.value.parentElement) return { x: 0, y: 0 };
 
   const { left: rX, top: rY } = root.value.getBoundingClientRect();
   const { left: pX, top: pY } = root.value.parentElement.getBoundingClientRect();
-  const { x: iX, y: iY } = getInnerAbsoluteTopLeft();
 
-  const vX = Math.max(rX, pX);
-  const vY = Math.max(rY, pY);
+  const visibleX = Math.max(rX, pX);
+  const visibleY = Math.max(rY, pY);
 
-  const relX = (vX - iX) / scale;
-  const relY = (vY - iY) / scale;
-
-  const { x, y } = transform(relX, relY, -rotate);
+  const [{ x, y }] = localizePoints([{ x: visibleX, y: visibleY }]);
 
   return { x, y };
-}
-
-function scrollTo(x: number, y: number) {
-  if (!inner.value) return;
-
-  const point = document.createElement("div");
-  point.style.position = "absolute";
-  point.style.left = `${x * scale}px`;
-  point.style.top = `${y * scale}px`;
-  inner.value.append(point);
-  point.scrollIntoView({ block: "start", inline: "start" });
-  point.remove();
 }
 
 defineExpose({
@@ -283,9 +297,10 @@ defineExpose({
   setNodes,
   setMatches,
   scrollToMatchIndex,
+  scrollTo,
+  localizePoints,
   getVisibleRatio,
   getVisibleTopLeft,
-  scrollTo,
 });
 
 watch(
@@ -300,23 +315,22 @@ watch(
     inner.value.style.rotate = `${rotate}deg`;
     inner.value.style.transform = `rotateY(${flip ? 180 : 0}deg)`;
 
+    const { x, y } = root.value.getBoundingClientRect();
     const { width: boxW, height: boxH } = inner.value.getBoundingClientRect();
 
     root.value.style.width = `${boxW}px`;
     root.value.style.height = `${boxH}px`;
 
-    const { x: pX, y: pY, width: pW, height: pH } = root.value.getBoundingClientRect();
-    const { x: cX, y: cY, width: cW, height: cH } = inner.value.getBoundingClientRect();
+    const oCX = x + (width * scale) / 2;
+    const oCY = y + (height * scale) / 2;
 
-    const pCenterX = pX + pW / 2;
-    const pCenterY = pY + pH / 2;
-    const cCenterX = cX + cW / 2;
-    const cCenterY = cY + cH / 2;
+    const nCX = x + boxW / 2;
+    const nCY = y + boxH / 2;
 
-    const deltaX = pCenterX - cCenterX;
-    const deltaY = pCenterY - cCenterY;
+    const dX = nCX - oCX;
+    const dY = nCY - oCY;
 
-    inner.value.style.translate = `${deltaX}px ${deltaY}px`;
+    inner.value.style.translate = `${dX}px ${dY}px`;
   },
   { immediate: true },
 );

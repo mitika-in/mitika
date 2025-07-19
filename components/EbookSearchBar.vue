@@ -77,7 +77,6 @@
 <script setup lang="ts">
 import type { Page } from "@/backends/ebook";
 import { useLogger } from "@/logging";
-import type { EbookPosition } from "@/models";
 
 const { debug } = useLogger("ebookSearchBar");
 
@@ -88,7 +87,7 @@ interface Props {
 }
 
 interface Emits {
-  change: [position: EbookPosition];
+  change: [index: number];
   search: [];
   step: [index: number];
   query: [index: number, needle: string, doneCb: (matchesFound: boolean) => void];
@@ -150,7 +149,7 @@ async function doEagerSearch(direction: -1 | 1) {
 
   if (matchesFound) {
     debug(`Found first match at ${i}`);
-    emit("change", { name: "", value: i, x: 0, y: 0 });
+    emit("change", i);
   } else {
     debug("Found no more results");
     failed.value = true;

@@ -1,4 +1,4 @@
-import type { Page, Match, Rect } from "@/backends/ebook";
+import type { Page, Match, EbookOutline } from "@/backends/ebook";
 import {
   type ExternalLinkNode,
   type Font,
@@ -13,21 +13,46 @@ import {
   type Response,
   type MuPdfMetadata,
 } from "@/backends/muPdf/communication";
-import type { Outline } from "@/backends/outline";
-import type { EbookColor, EbookPosition } from "@/models";
-import { ColorScheme } from "@/models";
 import * as mupdf from "mupdf";
 
-interface RawOutline {
+interface MuPdfOutlineItem {
   title: string | undefined;
   uri: string | undefined;
   open: boolean;
-  down?: RawOutline[];
+  down?: MuPdfOutlineItem[];
   page?: number;
 }
 
-function mupdfRectToRect(mupdfRect: [ulx: number, uly: number, lrx: number, lry: number]): Rect {
-  const [ulx, uly, lrx, lry] = mupdfRect;
+type MuPdfRect = [ulx: number, uly: number, lrx: number, lry: number];
+
+type MuPdfQuad = [
+  ulx: number,
+  uly: number,
+  urx: number,
+  ury: number,
+  llx: number,
+  lly: number,
+  lrx: number,
+  lry: number,
+];
+
+interface MuPdfLine {
+  bbox: { x: number; y: number; w: number; h: number };
+  font: Font;
+  text: string;
+  x: number;
+  y: number;
+}
+
+interface Rect {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+}
+
+function mupdfRectToRect(rect: MuPdfRect): Rect {
+  const [ulx, uly, lrx, lry] = rect;
   const x = ulx;
   const y = uly;
   const width = lrx - ulx;
@@ -35,19 +60,8 @@ function mupdfRectToRect(mupdfRect: [ulx: number, uly: number, lrx: number, lry:
   return { x, y, width, height };
 }
 
-function mupdfQuadToRect(
-  mupdfQuad: [
-    ulx: number,
-    uly: number,
-    urx: number,
-    ury: number,
-    llx: number,
-    lly: number,
-    lrx: number,
-    lry: number,
-  ],
-): Rect {
-  const [ulx, uly, urx, ury, llx, lly, lrx, lry] = mupdfQuad;
+function mupdfQuadToRect(quad: MuPdfQuad): Rect {
+  const [ulx, uly, urx, ury, llx, lly, lrx, lry] = quad;
   const left = Math.max(ulx, llx);
   const right = Math.max(urx, lrx);
   const top = Math.max(uly, ury);
@@ -70,7 +84,10 @@ function linkToExternalLinkNode(link: mupdf.Link): ExternalLinkNode {
   return node;
 }
 
-function linkToInternalLinkNode(link: mupdf.Link, position: EbookPosition): InternalLinkNode {
+function linkToInternalLinkNode(
+  link: mupdf.Link,
+  position: { value: number; x: number; y: number },
+): InternalLinkNode {
   const box = mupdfRectToRect(link.getBounds());
   const node = {
     type: NodeType.InternalLink,
@@ -83,13 +100,7 @@ function linkToInternalLinkNode(link: mupdf.Link, position: EbookPosition): Inte
   return node;
 }
 
-function lineToTextNode(line: {
-  bbox: { x: number; y: number; w: number; h: number };
-  font: Font;
-  text: string;
-  x: number;
-  y: number;
-}): TextNode {
+function lineToTextNode(line: MuPdfLine): TextNode {
   const node = {
     type: NodeType.Text,
     x: line.bbox.x,
@@ -130,42 +141,44 @@ class MuPdfWorker {
 
   getMetadata(): MuPdfMetadata {
     const name = this.doc.getMetaData(mupdf.Document.META_INFO_TITLE) || "";
+
     const authors = [];
     const author = this.doc.getMetaData(mupdf.Document.META_INFO_AUTHOR);
     if (author) authors.push(author);
-    const cover = this.getArray(0, ColorScheme.Original);
+
+    const cover = this.getImageArray(0, 1, "#ffffff", "#000000");
+
     return { name, authors, cover };
   }
 
-  private getLabel(index: number, page: mupdf.Page): string {
-    if (this.epub) return (index + 1).toString();
-    return page.getLabel() || (index + 1).toString();
+  private formatLabel(index: number, label: string): string {
+    if (this.epub || label.length == 0) return (index + 1).toString();
+    return label;
   }
 
-  private resolve(uri: string): EbookPosition {
+  private resolve(uri: string): { value: number; x: number; y: number } {
     const dest = this.doc.resolveLinkDestination(uri);
-    const page = this.doc.loadPage(dest.page);
-    const name = this.getLabel(dest.page, page);
-    return { name, value: dest.page, x: dest.x, y: dest.y };
+    return { value: dest.page, x: dest.x, y: dest.y };
   }
 
-  private toOutline(rawOutline: RawOutline): Outline | null {
-    if (!rawOutline.uri || !rawOutline.title) return null;
+  private toOutlines(outlineItems: MuPdfOutlineItem[] | null | undefined): EbookOutline[] {
+    if (outlineItems == null) return [];
+    return outlineItems.map((o) => this.toOutline(o)).filter((o) => o != null);
+  }
 
-    const id = rawOutline.uri;
-    const name = rawOutline.title;
-    const position = this.resolve(rawOutline.uri);
-    const children = rawOutline.down
-      ? rawOutline.down.map((o) => this.toOutline(o)).filter((o) => o != null)
-      : [];
+  private toOutline(outlineItem: MuPdfOutlineItem): EbookOutline | null {
+    if (!outlineItem.uri || !outlineItem.title) return null;
+
+    const id = outlineItem.uri;
+    const name = outlineItem.title;
+    const position = this.resolve(outlineItem.uri);
+    const children = this.toOutlines(outlineItem.down);
+
     return { id, name, position, children };
   }
 
-  getOutlines(): Outline[] {
-    const rawOutlines: RawOutline[] | null = this.doc.loadOutline();
-    const outlines = rawOutlines
-      ? rawOutlines.map((o) => this.toOutline(o)).filter((o) => o != null)
-      : [];
+  getOutlines(): EbookOutline[] {
+    const outlines = this.toOutlines(this.doc.loadOutline());
     return outlines;
   }
 
@@ -175,32 +188,46 @@ class MuPdfWorker {
 
     for (let i = 0; i < length; i++) {
       const page = this.doc.loadPage(i);
-      const name = this.getLabel(i, page);
-      const position = { name, value: i, x: 0, y: 0 };
+      const label = this.formatLabel(i, page.getLabel());
       const rect = mupdfRectToRect(page.getBounds());
-      pages.push({ position, width: rect.width, height: rect.height });
+      pages.push({ label, width: rect.width, height: rect.height });
+      page.destroy();
     }
 
     return pages;
   }
 
-  getImageData(index: number, color: EbookColor, scale: number): ImageData {
+  getPixmap(index: number, scale: number, background: string, foreground: string): mupdf.Pixmap {
+    const fg = parseInt(foreground.substring(1), 16);
+    const bg = parseInt(background.substring(1), 16);
+
     const page = this.doc.loadPage(index);
 
     const matrix = mupdf.Matrix.scale(scale * this.dpr, scale * this.dpr);
     const bbox = mupdf.Rect.transform(page.getBounds(), matrix);
     const pixmap = new mupdf.Pixmap(mupdf.ColorSpace.DeviceRGB, bbox, true);
     pixmap.clear(255);
+
     const device = new mupdf.DrawDevice(matrix, pixmap);
     page.run(device, mupdf.Matrix.identity);
-    pixmap.tint(color.foreground, color.background);
-    const imageData = new ImageData(pixmap.getPixels(), pixmap.getWidth(), pixmap.getHeight());
 
-    pixmap.destroy();
+    pixmap.tint(fg, bg);
+
     device.close();
-    device.destroy();
     page.destroy();
 
+    return pixmap;
+  }
+
+  getImageArray(index: number, scale: number, background: string, foreground: string): Uint8Array {
+    const pixmap = this.getPixmap(index, scale, background, foreground);
+    const array = pixmap.asPNG();
+    return array;
+  }
+
+  getImageData(index: number, scale: number, background: string, foreground: string): ImageData {
+    const pixmap = this.getPixmap(index, scale, background, foreground);
+    const imageData = new ImageData(pixmap.getPixels(), pixmap.getWidth(), pixmap.getHeight());
     return imageData;
   }
 
@@ -233,26 +260,6 @@ class MuPdfWorker {
     return nodes;
   }
 
-  getArray(index: number, color: EbookColor): Uint8Array {
-    const page = this.doc.loadPage(index) as mupdf.PDFPage;
-
-    const pixmap = page.toPixmap(
-      mupdf.Matrix.identity,
-      mupdf.ColorSpace.DeviceRGB,
-      false,
-      false,
-      "View",
-      "CropBox",
-    );
-    pixmap.tint(color.foreground, color.background);
-    const array = pixmap.asPNG();
-
-    pixmap.destroy();
-    page.destroy();
-
-    return array;
-  }
-
   search(index: number, needle: string): Match[] {
     const page = this.doc.loadPage(index);
     const hits = page.search(needle);
@@ -261,13 +268,13 @@ class MuPdfWorker {
     for (const quads of hits) {
       const first = mupdfQuadToRect(quads[0]);
       const last = mupdfQuadToRect(quads[quads.length - 1]);
-      const rect: Rect = {
+      const match = {
         x: first.x,
         y: first.y,
         width: last.x + last.width - first.x,
         height: last.y + last.height - first.y,
       };
-      matches.push({ rect });
+      matches.push(match);
     }
 
     page.destroy();
@@ -303,15 +310,14 @@ self.onmessage = (message) => {
       case RequestType.GetPages:
         data = worker!.getPages();
         break;
+      case RequestType.GetImageArray:
+        data = worker!.getImageArray(args[0], args[1], args[2], args[3]);
+        break;
       case RequestType.GetImageData:
-        data = worker!.getImageData(args[0], args[1], args[2]);
+        data = worker!.getImageData(args[0], args[1], args[2], args[3]);
         break;
       case RequestType.GetNodes:
         data = worker!.getNodes(args[0]);
-        break;
-      case RequestType.GetArray:
-        data = worker!.getArray(args[0], args[1]);
-        transfer = [data.buffer];
         break;
       case RequestType.Open:
         worker = new MuPdfWorker(args[0], args[1], args[2]);

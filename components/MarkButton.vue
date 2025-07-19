@@ -18,10 +18,12 @@
 </template>
 <script setup lang="ts">
 import { DatabaseEvent, useDatabase } from "@/database";
-import { type Item, type Mark, createMark } from "@/models";
-import { formatPosition } from "@/utils";
+import { type Item, type Mark, createMark, ObjectType } from "@/models";
+import { QUERY_POSITION_NAME } from "@/components/keys";
 
 const { t } = useI18n();
+
+const queryPositionName = inject<(position: any) => string>(QUERY_POSITION_NAME);
 
 interface Props {
   item: Item;
@@ -32,26 +34,28 @@ const { item } = defineProps<Props>();
 
 const database = await useDatabase();
 
-const mark: Ref<Mark | null> = ref(null);
+const marks: Ref<Mark[]> = ref([]);
+
+const mark = computed(() => {
+  return marks.value.find((mark) => mark.position.value == item.position.value);
+});
 
 async function onChange() {
   if (mark.value) {
-    await database.delMark(toValue(mark));
+    await database.delObject(toValue(mark)!);
     return;
   }
 
-  const prettyPosition = formatPosition(item.position, item.type);
   const newMark = createMark(
     item.id,
-    t("On {position}", { position: prettyPosition }),
     toRaw(item.position),
+    t("On {position}", { position: queryPositionName!(item.position) }),
   );
-  await database.putMark(newMark);
+  await database.putObject(newMark);
 }
 
 async function onMarksChanged() {
-  const marks = await database.getMarks(item.id);
-  mark.value = marks.find((mark) => mark.position.value == item.position.value);
+  marks.value = (await database.getObjects(item.id, ObjectType.Mark)) as Mark[];
 }
 
 watch(

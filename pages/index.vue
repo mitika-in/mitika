@@ -181,7 +181,7 @@ const source = await useSource();
 const storage = await useStorage();
 
 const aboutDialog = useTemplateRef("aboutDialog");
-const messageDialog = useTemplateRef("messageDialog")!;
+const messageDialog = useTemplateRef("messageDialog");
 
 const search = ref("");
 const sort: Ref<string> = ref(await database.getProperty("home.sort", Sort.RecentFirst));

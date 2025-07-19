@@ -1,33 +1,26 @@
-import {
-  type AudiobookBackend,
-  type AudiobookBackendOptions,
-  type AudiobookInitOptions,
-} from "@/backends/audiobook";
-import {
-  type EbookBackend,
-  type EbookBackendOptions,
-  type EbookInitOptions,
-} from "@/backends/ebook";
+import { type AudiobookBackend, type AudiobookOutline } from "@/backends/audiobook";
+import { type EbookBackend, type EbookOutline } from "@/backends/ebook";
+import { type Outline, type Metadata } from "@/backends/backend";
 import { HtmlAudio } from "@/backends/htmlAudio";
 import { MuPdf } from "@/backends/muPdf";
 
-export function useAudiobookBackend(
-  type: string,
-): new (
-  backendOptions: AudiobookBackendOptions,
-  initOptions: AudiobookInitOptions,
-) => AudiobookBackend {
-  if (type == "audio/mp4") return HtmlAudio;
-  if (type == "audio/mpeg") return HtmlAudio;
+export function useAudiobookBackend(type: string): AudiobookBackend {
+  if (type == "audio/mp4") return new HtmlAudio();
+  if (type == "audio/mpeg") return new HtmlAudio();
   throw new Error(`Unknown audiobook type: ${type}`);
 }
 
-export function useEbookBackend(
-  type: string,
-): new (backendOptions: EbookBackendOptions, initOptions: EbookInitOptions) => EbookBackend {
-  if (type == "application/pdf") return MuPdf;
-  if (type == "application/epub+zip") return MuPdf;
+export function useEbookBackend(type: string): EbookBackend {
+  if (type == "application/pdf") return new MuPdf();
+  if (type == "application/epub+zip") return new MuPdf();
   else throw new Error(`Unknown ebook type: ${type}`);
 }
 
-export { type AudiobookBackend, type EbookBackend };
+export {
+  type AudiobookBackend,
+  type AudiobookOutline,
+  type EbookBackend,
+  type EbookOutline,
+  type Metadata,
+  type Outline,
+};

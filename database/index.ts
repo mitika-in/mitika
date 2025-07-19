@@ -1,5 +1,4 @@
-import { type Database } from "@/database/database";
-import { DatabaseEvent } from "@/database/databaseEvent";
+import { type Database, DatabaseEvent } from "@/database/database";
 import { IndexedDb } from "@/database/indexedDb";
 
 let database: Database;

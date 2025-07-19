@@ -1,5 +1,5 @@
 import { Constants } from "@/constants";
-import { ItemType, type Position, type EbookPosition } from "@/models";
+import { ItemType } from "@/models";
 
 export function getBaseName(path: string): string {
   const baseName = path.split(/[\\/]/).pop();
@@ -49,10 +49,4 @@ export function formatToTimestamp(value: number, hoursLength: number = 0): strin
   const secsStr = seconds.toString().padStart(2, "0");
 
   return `${hoursStr}:${minsStr}:${secsStr}`;
-}
-
-export function formatPosition(position: Position, type: ItemType): string {
-  if (type == ItemType.Audiobook) return formatToTimestamp(position.value);
-  else if (type == ItemType.Ebook) return (position as EbookPosition).name;
-  else throw new Error(`Unknow item type: ${type}`);
 }

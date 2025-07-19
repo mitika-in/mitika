@@ -1,5 +1,8 @@
 <template>
-  <div class="relative flex flex-col gap-4">
+  <div
+    v-if="pages.length != 0"
+    class="relative flex flex-col gap-4"
+  >
     <div
       class="collapse"
       :class="{ 'collapse-open': !focus }"
@@ -26,13 +29,13 @@
           </button>
           <button
             class="btn btn-ghost hidden @xs:flex"
-            @click="scaleDialog.toggle()"
+            @click="scaleDialog!.toggle()"
           >
             <EyeIcon class="size-4" />
           </button>
           <button
             class="btn btn-ghost hidden @sm:flex"
-            @click="colorDialog.toggle()"
+            @click="colorDialog!.toggle()"
           >
             <ImageIcon class="size-4" />
           </button>
@@ -49,13 +52,13 @@
           </label>
           <button
             class="btn btn-ghost hidden @lg:flex"
-            @click="layoutDialog.toggle()"
+            @click="layoutDialog!.toggle()"
           >
             <ColumnsIcon class="size-4" />
           </button>
           <button
             class="btn btn-ghost hidden @xl:flex"
-            @click="rotateDialog.toggle()"
+            @click="rotateDialog!.toggle()"
           >
             <ArrowUpCircleIcon
               class="size-4"
@@ -64,19 +67,19 @@
           </button>
           <button
             class="btn btn-ghost hidden @2xl:flex"
-            @click="addNoteDialog.toggle()"
+            @click="addNoteDialog!.toggle()"
           >
             <FilePlusIcon class="size-4" />
           </button>
           <button
             class="btn btn-ghost hidden @3xl:flex"
-            @click="marksDialog.toggle()"
+            @click="marksDialog!.toggle()"
           >
             <TagIcon class="size-4" />
           </button>
           <button
             class="btn btn-ghost hidden @3xl:flex"
-            @click="notesDialog.toggle()"
+            @click="notesDialog!.toggle()"
           >
             <LayersIcon class="size-4" />
           </button>
@@ -91,7 +94,7 @@
             <template #content>
               <ul class="menu bg-base-100 w-64 rounded-sm shadow-sm">
                 <li class="@3xs:hidden">
-                  <button @click="outlinesDialog.toggle()">
+                  <button @click="outlinesDialog!.toggle()">
                     {{ $t("Outlines") }}
                   </button>
                 </li>
@@ -111,12 +114,12 @@
                   </button>
                 </li>
                 <li class="@xs:hidden">
-                  <button @click="scaleDialog.toggle()">
+                  <button @click="scaleDialog!.toggle()">
                     {{ $t("Scale") }}
                   </button>
                 </li>
                 <li class="@sm:hidden">
-                  <button @click="colorDialog.toggle()">
+                  <button @click="colorDialog!.toggle()">
                     {{ $t("Color") }}
                   </button>
                 </li>
@@ -132,27 +135,27 @@
                   </label>
                 </li>
                 <li class="@lg:hidden">
-                  <button @click="layoutDialog.toggle()">
+                  <button @click="layoutDialog!.toggle()">
                     {{ $t("Layout") }}
                   </button>
                 </li>
                 <li class="@xl:hidden">
-                  <button @click="rotateDialog.toggle()">
+                  <button @click="rotateDialog!.toggle()">
                     {{ $t("Rotate") }}
                   </button>
                 </li>
                 <li class="@2xl:hidden">
-                  <button @click="addNoteDialog.toggle()">
+                  <button @click="addNoteDialog!.toggle()">
                     {{ $t("Add note") }}
                   </button>
                 </li>
                 <li class="@3xl:hidden">
-                  <button @click="marksDialog.toggle()">
+                  <button @click="marksDialog!.toggle()">
                     {{ $t("Marks") }}
                   </button>
                 </li>
                 <li class="@3xl:hidden">
-                  <button @click="notesDialog.toggle()">
+                  <button @click="notesDialog!.toggle()">
                     {{ $t("Notes") }}
                   </button>
                 </li>
@@ -170,7 +173,7 @@
           :startIndex="startIndex"
           :endIndex="endIndex"
           :pages="pages"
-          @change="onPositionChange"
+          @change="onSearchChange"
           @search="onSearch"
           @step="onStep"
           @query="onQuery"
@@ -190,7 +193,6 @@
           ref="startPage"
           v-bind="getPageProperties(startIndex)"
           class="shrink-0"
-          :color="ebook.color"
           :flip="ebook.flip"
           :rotate="ebook.rotate"
           :scale="ebook.scale"
@@ -202,7 +204,6 @@
           v-bind="getPageProperties(endIndex)"
           v-show="ebook.layout != EbookLayout.Single"
           class="shrink-0"
-          :color="ebook.color"
           :flip="ebook.flip"
           :rotate="ebook.rotate"
           :scale="ebook.scale"
@@ -221,9 +222,9 @@
       </button>
       <button
         class="btn btn-circle"
-        @click="previewsDialog.toggle()"
+        @click="previewsDialog!.toggle()"
       >
-        {{ pages.length != 0 ? pages[ebook.position.value].position.name : "" }}
+        {{ queryPositionName(ebook.position) }}
       </button>
       <button
         :disabled="endIndex >= pages.length - 1"
@@ -240,7 +241,8 @@
     />
     <EbookColorDialog
       ref="colorDialog"
-      :color="ebook.color"
+      :background="ebook.background"
+      :foreground="ebook.foreground"
       @change="onColorChange"
     />
     <EbookLayoutDialog
@@ -250,7 +252,8 @@
     />
     <EbookPagePreviewsDialog
       ref="previewsDialog"
-      :color="ebook.color"
+      :background="ebook.background"
+      :foreground="ebook.foreground"
       :flip="ebook.flip"
       :pages="pages"
       :rotate="ebook.rotate"
@@ -289,17 +292,20 @@
 </template>
 <script setup lang="ts">
 import { Constants } from "@/constants";
-import { type EbookBackend, useEbookBackend } from "@/backends";
+import {
+  type EbookBackend,
+  useEbookBackend,
+  type EbookOutline,
+  type Metadata,
+  type Outline,
+} from "@/backends";
 import { type Page } from "@/backends/ebook";
-import { type Metadata } from "@/backends/metadata";
-import { type Outline } from "@/backends/outline";
 import { useDatabase } from "@/database";
 import { useLogger } from "@/logging";
+import { QUERY_POSITION_NAME } from "@/components/keys";
 import {
-  ColorScheme,
   EbookLayout,
   EbookResizePolicy,
-  type EbookColor,
   type Ebook,
   type Mark,
   type Note,
@@ -331,7 +337,7 @@ let backend: EbookBackend | null = null;
 const observer = new ResizeObserver(onContainerResize);
 
 const pages: Ref<Page[]> = shallowRef([]);
-const outlines: Ref<Outline[]> = shallowRef([]);
+const outlines: Ref<EbookOutline[]> = shallowRef([]);
 
 const searching = ref(false);
 
@@ -372,7 +378,7 @@ function onOpenNote(note: Note) {
 
 function onOpenOutline(outline: Outline) {
   debug(`Opening outline: ${outline.name}`);
-  ebook.position = outline.position as EbookPosition;
+  ebook.position = (outline as EbookOutline).position;
   loadLayout();
 }
 
@@ -442,13 +448,10 @@ function onSearchClick() {
   }
 }
 
-function onAddNoteClick() {
-  addNoteDialog.value!.show();
-}
-
-function onColorChange(color: EbookColor) {
-  debug(f`Changing to color: ${color}`);
-  ebook.color = color;
+function onColorChange(background: string, foreground: string) {
+  debug(f`Changing to background: ${background}, foreground: ${foreground}`);
+  ebook.background = background;
+  ebook.foreground = foreground;
   loadImageData();
 }
 
@@ -462,26 +465,22 @@ function onLayoutChange(layout: EbookLayout) {
   loadLayout();
 }
 
-function onMarksClick() {
-  marksDialog.value!.show();
-}
-
-function onNotesClick() {
-  notesDialog.value!.show();
-}
-
 async function onRotateChange(rotate: number) {
   debug(`Changing to rotate: ${rotate}`);
   ebook.rotate = rotate;
 }
 
 async function onSetPreview(index: number, setPreviewCb: (preview: Blob) => void) {
-  const preview = await backend!.getBlob(index, toRaw(ebook.color));
+  const preview = await backend!.getImageBlob(index, 1, ebook.background, ebook.foreground);
   setPreviewCb(preview);
 }
 
 function onSearch() {
   loadSearch();
+}
+
+function onSearchChange(index: number) {
+  onPositionChange({ value: index, x: 0, y: 0 });
 }
 
 function onStep(matchIndex: number) {
@@ -506,6 +505,7 @@ function onScrollTimeout() {
 
   let index;
   let topLeft;
+
   if (startPageRatio > endPageRatio) {
     index = startIndex.value;
     topLeft = startPage.value!.getVisibleTopLeft();
@@ -513,7 +513,8 @@ function onScrollTimeout() {
     index = endIndex.value;
     topLeft = endPage.value!.getVisibleTopLeft();
   }
-  ebook.position = pages.value[index].position;
+
+  ebook.position.value = index;
   ebook.position.x = topLeft.x;
   ebook.position.y = topLeft.y;
 
@@ -559,20 +560,21 @@ function onOpenUri(uri: string) {
 
 function onPreviousClick() {
   const index = startIndex.value - 1;
-  onPositionChange(pages.value[index].position);
+  onPositionChange({ value: index, x: 0, y: 0 });
 }
 
 function onNextClick() {
   const index = endIndex.value + 1;
-  onPositionChange(pages.value[index].position);
+  onPositionChange({ value: index, x: 0, y: 0 });
 }
 
 async function loadImageData() {
   if (startIndex.value >= 0) {
     const imageData = await backend!.getImageData(
       startIndex.value,
-      toRaw(ebook.color),
       ebook.scale,
+      ebook.background,
+      ebook.foreground,
     );
     startPage.value!.setImageData(imageData);
   } else {
@@ -580,7 +582,12 @@ async function loadImageData() {
   }
 
   if (ebook.layout != EbookLayout.Single && endIndex.value < pages.value.length) {
-    const imageData = await backend!.getImageData(endIndex.value, toRaw(ebook.color), ebook.scale);
+    const imageData = await backend!.getImageData(
+      endIndex.value,
+      ebook.scale,
+      ebook.background,
+      ebook.foreground,
+    );
     endPage.value!.setImageData(imageData);
   } else {
     endPage.value!.setImageData(null);
@@ -674,23 +681,22 @@ async function loadLayout() {
 
 async function open(ebook: Ebook) {
   debug(f`Opening: ${ebook}`);
-  const ctor = useEbookBackend(ebook.file.type);
-  debug(f`Using backend: ${ctor.name}`);
 
-  let fitScale = false;
+  backend = useEbookBackend(ebook.file.type);
+  debug(f`Using backend: ${backend.constructor.name}`);
+
   if (ebook.openingFirstTime) {
     if (window.screen.width >= DUAL_PAGE_WIDTH) ebook.layout = EbookLayout.DualEnd;
     ebook.openingFirstTime = false;
   }
 
-  backend = new ctor({ passwordCb: console.error }, {});
   const blob = await source.readFile(ebook.file);
-  await backend!.open(blob, ebook.file.type);
+  await backend!.open(blob, ebook.file.type, { passwordCb: console.error });
   pages.value = await backend!.getPages();
-  outlines.value = await backend!.getOutlines();
-  emit("metadata", await backend!.getMetadata());
 
-  await loadLayout();
+  window.setTimeout(() => loadLayout());
+  window.setTimeout(async () => (outlines.value = await backend!.getOutlines()));
+  window.setTimeout(async () => emit("metadata", await backend!.getMetadata()));
 }
 
 async function close(ebook: Ebook) {
@@ -702,6 +708,12 @@ async function close(ebook: Ebook) {
   await database.putItem(toRaw(ebook));
 }
 
+function queryPositionName(position: EbookPosition): string {
+  return pages.value[position.value].label;
+}
+
+provide(QUERY_POSITION_NAME, queryPositionName);
+
 watch(
   () => ebook,
   async (newEbook, oldEbook) => {
@@ -711,12 +723,14 @@ watch(
   { immediate: true },
 );
 
-onMounted(() => {
-  observer.observe(container.value!);
+watch(container, () => {
+  if (container.value) observer.observe(container.value!);
+  else observer.disconnect();
 });
 
+onMounted(() => {});
+
 onUnmounted(async () => {
-  observer.disconnect();
   await close(ebook);
 });
 </script>

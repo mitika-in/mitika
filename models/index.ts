@@ -1,29 +1,47 @@
-import { type Audiobook, createAudiobook } from "@/models/audiobook";
+import { type Audiobook, type AudiobookPosition, createAudiobook } from "@/models/audiobook";
 import { type Book, createBook } from "@/models/book";
-import { ColorScheme } from "@/models/colorScheme";
 import {
   type Ebook,
-  type EbookColor,
   type EbookPosition,
   EbookResizePolicy,
   EbookLayout,
   createEbook,
 } from "@/models/ebook";
-import { type File } from "@/models/file";
-import { type Item, ItemType } from "@/models/item";
-import { type Mark, createMark } from "@/models/mark";
-import { type Note, createNote } from "@/models/note";
-import { type Position } from "@/models/position";
+import { type File, type Item, type Position, ItemType } from "@/models/item";
+import {
+  type Annotation,
+  type Mark,
+  type Note,
+  type Object,
+  ObjectType,
+  createAnnotation,
+  createMark,
+  createNote,
+} from "@/models/object";
 
-export type { Audiobook, Book, Ebook, EbookColor, EbookPosition, File, Item, Mark, Note, Position };
+export type {
+  Audiobook,
+  AudiobookPosition,
+  Book,
+  Ebook,
+  Annotation,
+  EbookPosition,
+  File,
+  Item,
+  Mark,
+  Note,
+  Object,
+  Position,
+};
 export {
   createAudiobook,
   createBook,
   createEbook,
+  createAnnotation,
   createMark,
   createNote,
-  ColorScheme,
   EbookLayout,
   EbookResizePolicy,
   ItemType,
+  ObjectType,
 };

@@ -37,7 +37,7 @@
               :key="index"
               :ref="(component) => onPreviewMounted(index, component)"
               :flip="flip"
-              :name="page.position.name"
+              :label="page.label"
               :rotate="rotate"
               @click="onClick(index)"
             />
@@ -59,13 +59,14 @@ import { type Page } from "@/backends/ebook";
 import EbookPagePreview from "@/components/EbookPagePreview.vue";
 import { StatusType } from "@/components/statusType";
 import { useLogger } from "@/logging";
-import { type EbookPosition, type EbookColor } from "@/models";
+import { type EbookPosition } from "@/models";
 
 const { f, debug } = useLogger("ebookPositionButton");
 
 interface Props {
   pages: Page[];
-  color: EbookColor;
+  background: string;
+  foreground: string;
   flip: boolean;
   rotate: number;
 }
@@ -75,7 +76,7 @@ interface Emits {
   setPreview: [index: number, setPreviewCb: (preview: Blob) => void];
 }
 
-const { pages, color, flip, rotate } = defineProps<Props>();
+const { pages, background, foreground, flip, rotate } = defineProps<Props>();
 const emit = defineEmits<Emits>();
 
 const input = ref("");
@@ -91,9 +92,7 @@ const previews: Map<number, ComponentPublicInstance<typeof EbookPagePreview>> = 
 let intersectionTimeoutId = 0;
 
 const filteredPages = computed(() => {
-  return pages.filter(
-    (page) => input.value.length == 0 || page.position.name.includes(input.value),
-  );
+  return pages.filter((page) => input.value.length == 0 || page.label.includes(input.value));
 });
 
 function setPreviews() {
@@ -162,7 +161,7 @@ async function onPreviewMounted(
 }
 
 function onClick(index: number) {
-  emit("change", pages[index].position);
+  emit("change", { value: index, x: 0, y: 0 });
   dialog.value!.hide();
 }
 
@@ -173,7 +172,7 @@ function toggle() {
 
 defineExpose({ toggle });
 
-watch([() => color], () => {
+watch([() => background, () => foreground], () => {
   debug(`Clearing previews as color changed`);
   for (const preview of previews.values()) preview.setPreview(null);
 });

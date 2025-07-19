@@ -1,12 +1,4 @@
-import { ColorScheme } from "@/models/colorScheme";
-import { type File } from "@/models/file";
-import { type Item, ItemType } from "@/models/item";
-import { type Position } from "@/models/position";
-
-export interface EbookColor {
-  foreground: number;
-  background: number;
-}
+import { type File, type Item, type Position, ItemType } from "@/models/item";
 
 export enum EbookLayout {
   Single = "single",
@@ -15,7 +7,6 @@ export enum EbookLayout {
 }
 
 export interface EbookPosition extends Position {
-  name: string;
   x: number;
   y: number;
 }
@@ -29,7 +20,8 @@ export enum EbookResizePolicy {
 
 export interface Ebook extends Item {
   position: EbookPosition;
-  color: EbookColor;
+  background: string;
+  foreground: string;
   flip: boolean;
   layout: EbookLayout;
   rotate: number;
@@ -37,17 +29,18 @@ export interface Ebook extends Item {
   resizePolicy: EbookResizePolicy;
 }
 
-export function createEbook(parentId: string, name: string, file: File): Ebook {
+export function createEbook(bookId: string, name: string, file: File): Ebook {
   return {
     id: window.crypto.randomUUID(),
     type: ItemType.Ebook,
-    parentId,
+    bookId,
     name,
     file,
     order: 1,
-    position: { name: "0", value: 0, x: 0, y: 0 },
+    position: { value: 0, x: 0, y: 0 },
     openingFirstTime: true,
-    color: ColorScheme.Original,
+    background: "#ffffff",
+    foreground: "#000000",
     flip: false,
     layout: EbookLayout.Single,
     rotate: 0,

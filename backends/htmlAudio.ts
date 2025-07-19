@@ -1,59 +1,39 @@
 import {
-  AudiobookBackend,
+  type AudiobookBackend,
   type AudiobookBackendOptions,
-  type AudiobookInitOptions,
+  type AudiobookOutline,
   type PositionChangedCallback,
   type EndedCallback,
 } from "@/backends/audiobook";
-import type { Metadata } from "@/backends/metadata";
-import type { Outline } from "@/backends/outline";
+import type { Metadata } from "@/backends/backend";
 import { useLogger } from "@/logging";
-import type { Position } from "@/models";
 
 const { debug } = useLogger("htmlAudio");
 
-export class HtmlAudio extends AudiobookBackend {
+export class HtmlAudio implements AudiobookBackend {
   private audio!: HTMLAudioElement;
 
-  private endedCb: EndedCallback;
-  private positionCb: PositionChangedCallback;
-
-  private position: number;
-  private rate: number;
-  private volume: number;
-
-  constructor(backendOptions: AudiobookBackendOptions, initOptions: AudiobookInitOptions) {
-    super(backendOptions, initOptions);
-
-    this.endedCb = backendOptions.endedCb;
-    this.positionCb = backendOptions.positionCb;
-
-    this.position = initOptions.position.value;
-    this.rate = initOptions.rate;
-    this.volume = initOptions.volume;
-  }
+  private positionCb!: PositionChangedCallback;
+  private endedCb!: EndedCallback;
 
   private onError() {
     throw this.audio.error;
   }
 
   private onTimeUpdate() {
-    const currentTime = this.audio.currentTime;
-    const position = {
-      name: currentTime.toString(),
-      value: currentTime,
-    };
+    const position = this.audio.currentTime;
     this.positionCb(position);
   }
 
-  async open(blob: Blob) {
+  async open(blob: Blob, type: string, options: AudiobookBackendOptions) {
+    this.positionCb = options.positionCb;
+    this.endedCb = options.endedCb;
+
     this.audio = new Audio(URL.createObjectURL(blob));
-    this.audio.currentTime = this.position;
-    this.audio.playbackRate = this.rate;
-    this.audio.volume = this.volume;
+
     this.audio.addEventListener("error", () => this.onError());
     this.audio.addEventListener("timeupdate", () => this.onTimeUpdate());
-    this.audio.addEventListener("ended", this.endedCb);
+    this.audio.addEventListener("ended", () => this.endedCb());
   }
 
   async close() {
@@ -78,12 +58,12 @@ export class HtmlAudio extends AudiobookBackend {
     return this.audio.duration;
   }
 
-  async getOutlines(): Promise<Outline[]> {
+  async getOutlines(): Promise<AudiobookOutline[]> {
     return [];
   }
 
-  async setPosition(position: Position) {
-    this.audio.currentTime = position.value;
+  async setPosition(position: number) {
+    this.audio.currentTime = position;
   }
 
   async play() {
@@ -95,12 +75,10 @@ export class HtmlAudio extends AudiobookBackend {
   }
 
   async setRate(rate: number) {
-    debug(`Changing to rate: ${rate}`);
     this.audio.playbackRate = rate;
   }
 
   async setVolume(volume: number) {
-    debug(`Changing to volume: ${volume}`);
     this.audio.volume = volume;
   }
 }

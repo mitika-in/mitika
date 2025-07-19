@@ -6,13 +6,13 @@
       :style="`rotate: ${rotate}deg; transform: rotateY(${flip ? 180 : 0}deg)`"
     />
     <span>
-      {{ name }}
+      {{ label }}
     </span>
   </button>
 </template>
 <script setup lang="ts">
 interface Props {
-  name: string;
+  label: string;
   flip: boolean;
   rotate: number;
 }

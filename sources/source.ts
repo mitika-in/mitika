@@ -1,6 +1,6 @@
 import { type File } from "@/models";
 
-export function extensionToMimeType(extension: string): string {
+export function extensionToMimeType(extension: string): `${string}/${string}` {
   switch (extension) {
     case "epub":
       return "application/epub+zip";
@@ -15,7 +15,7 @@ export function extensionToMimeType(extension: string): string {
   }
 }
 
-export function mimeTypeToExtension(type: string): string {
+export function mimeTypeToExtension(type: `${string}/${string}`): string {
   switch (type) {
     case "application/epub+zip":
       return "epub";
@@ -32,7 +32,7 @@ export function mimeTypeToExtension(type: string): string {
 
 export interface Filter {
   name: string;
-  types: string[];
+  types: `${string}/${string}`[];
 }
 
 export abstract class Source {

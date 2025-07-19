@@ -8,7 +8,7 @@
         {{ mark.name }}
         &nbsp;
         <span class="italic">
-          {{ formatPosition(mark.position, type) }}
+          {{ queryPositionName!(mark.position) }}
         </span>
       </button>
       <button
@@ -83,18 +83,19 @@
   </li>
 </template>
 <script setup lang="ts">
-import { type Mark, ItemType } from "@/models";
-import { formatPosition } from "@/utils";
+import { type Mark } from "@/models";
+import { QUERY_POSITION_NAME } from "@/components/keys";
+
+const queryPositionName = inject<(position: any) => string>(QUERY_POSITION_NAME);
+
+interface Props {
+  mark: Mark;
+}
 
 interface Emits {
   click: [];
   edit: [];
   remove: [];
-}
-
-interface Props {
-  mark: Mark;
-  type: ItemType;
 }
 
 const { mark } = defineProps<Props>();
@@ -107,7 +108,6 @@ enum State {
 }
 
 const state = ref(State.Display);
-const expand = ref(false);
 const name = ref(mark.name);
 
 function onSaveClick() {

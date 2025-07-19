@@ -1,5 +1,3 @@
-import { type EbookPosition } from "@/models";
-
 export enum NodeType {
   ExternalLink,
   InternalLink,
@@ -15,7 +13,7 @@ export interface Node {
 }
 
 export interface InternalLinkNode extends Node {
-  position: EbookPosition;
+  position: { value: number; x: number; y: number };
 }
 
 export interface ExternalLinkNode extends Node {

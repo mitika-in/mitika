@@ -4,9 +4,9 @@ export enum RequestType {
   GetMetadata = "getMetadata",
   GetOutlines = "getOutlines",
   GetPages = "getPages",
+  GetImageArray = "getImageArray",
   GetImageData = "getImageData",
   GetNodes = "getNodes",
-  GetArray = "getArray",
   Open = "open",
   Search = "search",
 }

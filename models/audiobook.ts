@@ -1,17 +1,19 @@
-import { type File } from "@/models/file";
-import { type Item, ItemType } from "@/models/item";
+import { type File, type Item, type Position, ItemType } from "@/models/item";
+
+export interface AudiobookPosition extends Position {}
 
 export interface Audiobook extends Item {
+  position: AudiobookPosition;
   length: number;
   rate: number;
   volume: number;
 }
 
-export function createAudiobook(parentId: string, name: string, file: File): Audiobook {
+export function createAudiobook(bookId: string, name: string, file: File): Audiobook {
   return {
     id: window.crypto.randomUUID(),
     type: ItemType.Audiobook,
-    parentId,
+    bookId,
     name,
     file,
     order: 1,

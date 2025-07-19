@@ -1,8 +1,5 @@
 <template>
-  <div
-    ref="root"
-    xlass="{ 'bg-base-300 inset-shadow-sm shadow-sm': !transparent }"
-  >
+  <div ref="root">
     <div
       ref="inner"
       class="relative"
@@ -24,16 +21,16 @@
             {{ (node as TextNode).text }}
           </span>
           <button
-            v-if="node.type == NodeType.ExternalLink"
+            v-else-if="node.type == NodeType.ExternalLink"
             :style="getExternalLinkNodeStyle(node as ExternalLinkNode)"
             @click="$emit('openUri', (node as ExternalLinkNode).uri)"
           />
-
           <button
-            v-if="node.type == NodeType.InternalLink"
+            v-else-if="node.type == NodeType.InternalLink"
             :style="getInternalLinkNodeStyle(node as InternalLinkNode)"
             @click="$emit('openPosition', (node as InternalLinkNode).position)"
           />
+          <template v-else>ERROR</template>
         </template>
       </div>
       <div class="absolute origin-top-left">
@@ -149,10 +146,10 @@ function getMatchStyle(match: Match): string {
   background-color: var(--color-secondary);
   mix-blend-mode: multiply;
   position: absolute;
-  left: ${match.rect.x * scale}px;
-  top: ${match.rect.y * scale}px;
-  width: ${match.rect.width * scale}px;
-  height: ${match.rect.height * scale}px`;
+  left: ${match.x * scale}px;
+  top: ${match.y * scale}px;
+  width: ${match.width * scale}px;
+  height: ${match.height * scale}px`;
 }
 
 function getCurrentMatchStyle(match: Match): string {
@@ -220,7 +217,7 @@ function rotateByTheta(x: number, y: number, t: number, cX = 0, cY = 0): { x: nu
 }
 
 function localizePoints(points: { x: number; y: number }[]): { x: number; y: number }[] {
-  const { x: rX, y: rY, width: rW, height: rH } = root.value.getBoundingClientRect();
+  const { x: rX, y: rY, width: rW, height: rH } = root.value!.getBoundingClientRect();
 
   const oCX = rX + (width * scale) / 2;
   const oCY = rY + (height * scale) / 2;

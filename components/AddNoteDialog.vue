@@ -32,9 +32,11 @@
 <script setup lang="ts">
 import { useDatabase } from "@/database";
 import { type Item, createNote } from "@/models";
-import { formatPosition } from "@/utils";
+import { QUERY_POSITION_NAME } from "@/components/keys";
 
 const { t } = useI18n();
+
+const queryPositionName = inject<(position: any) => string>(QUERY_POSITION_NAME);
 
 interface Props {
   item: Item;
@@ -49,14 +51,13 @@ const name = ref("");
 const description = ref("");
 
 async function onAddClick() {
-  const note = createNote(item.id, name.value, description.value, toRaw(item.position));
-  await database.putNote(note);
+  const note = createNote(item.id, toRaw(item.position), name.value, description.value);
+  await database.putObject(note);
   dialog.value!.hide();
 }
 
 function show() {
-  const prettyPosition = formatPosition(item.position, item.type);
-  name.value = t("On {position}", { position: prettyPosition });
+  name.value = t("On {position}", { position: queryPositionName!(item.position) });
   description.value = t("{name} says…", { name: item.name });
   dialog.value!.show();
 }

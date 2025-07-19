@@ -108,6 +108,8 @@
 <script setup lang="ts">
 import { Constants } from "@/constants";
 
+const STEP = 0.25;
+
 interface Props {
   volume: number;
 }
@@ -125,7 +127,7 @@ const dialog = useTemplateRef("dialog");
 function onChange(event: Event) {
   let newVolume = Number((event.target as HTMLInputElement).value) / 100;
   if (isNaN(newVolume)) {
-    (event.target as HTMLInputElement).value = Math.floot(volume * 100);
+    (event.target as HTMLInputElement).value = Math.floor(volume * 100).toString();
     return;
   }
   newVolume = Math.min(

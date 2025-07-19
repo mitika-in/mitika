@@ -24,7 +24,6 @@
           <OutlinesDialogRow
             v-for="outline in outlines"
             :key="outline.id"
-            :type="item.type"
             :outline="outline"
             :search="search"
             @click="onClick"
@@ -41,12 +40,10 @@
   </Dialog>
 </template>
 <script setup lang="ts">
-import { type Outline } from "@/backends/outline";
+import { type Outline } from "@/backends";
 import { StatusType } from "@/components/statusType";
-import { type Item } from "@/models";
 
 interface Props {
-  item: Item;
   outlines: Outline[];
 }
 
@@ -54,7 +51,7 @@ interface Emits {
   openOutline: [outline: Outline];
 }
 
-const { item, outlines } = defineProps<Props>();
+defineProps<Props>();
 const emit = defineEmits<Emits>();
 
 const dialog = useTemplateRef("dialog");

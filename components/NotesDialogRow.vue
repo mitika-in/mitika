@@ -7,7 +7,7 @@
       >
         {{ note.name }}
         &nbsp;
-        {{ formatPosition(note.position, type) }}
+        {{ queryPositionName!(note.position) }}
       </button>
       <textarea
         v-model="note.description"
@@ -94,18 +94,19 @@
   </li>
 </template>
 <script setup lang="ts">
-import { type Note, ItemType } from "@/models";
-import { formatPosition } from "@/utils";
+import { type Note } from "@/models";
+import { QUERY_POSITION_NAME } from "@/components/keys";
+
+const queryPositionName = inject<(position: any) => string>(QUERY_POSITION_NAME);
+
+interface Props {
+  note: Note;
+}
 
 interface Emits {
   click: [];
   edit: [];
   remove: [];
-}
-
-interface Props {
-  note: Note;
-  type: ItemType;
 }
 
 const { note } = defineProps<Props>();

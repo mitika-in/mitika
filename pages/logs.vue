@@ -65,6 +65,8 @@
       </div>
       <Dropdown
         v-if="allDomains.size != 0"
+        buttonClass=""
+        dropdownClass=""
         popoverId="logsPo"
       >
         <template #button> Domains</template>

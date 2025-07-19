@@ -17,7 +17,7 @@
       <p class="text-center">{{ $t(Constants.AUTHORS) }}</p>
       <a
         class="link text-center"
-        :href="Constants.WEBISTE"
+        :href="Constants.WEBSITE"
         >{{ Constants.WEBSITE }}</a
       >
     </div>

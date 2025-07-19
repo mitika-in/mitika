@@ -171,7 +171,7 @@
   </div>
 </template>
 <script lang="ts" setup>
-import type { Metadata } from "@/backends/metadata";
+import type { Metadata } from "@/backends";
 import { Constants } from "@/constants";
 import { useDatabase } from "@/database";
 import { useLogger } from "@/logging";
@@ -205,6 +205,7 @@ function onFocusClick() {
 
 async function onOpenItem(item: Item, forceOpen: boolean) {
   debug(f`Opening item: ${item}, force: ${forceOpen}`);
+
   if (item.type == ItemType.Audiobook) {
     audiobook.value = item as Audiobook;
     book.value.openAudiobook = book.value.openAudiobook || forceOpen;

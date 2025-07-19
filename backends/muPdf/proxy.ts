@@ -1,16 +1,14 @@
 import type { PasswordRequiredCallback } from "@/backends/backend";
-import type { Page, Match } from "@/backends/ebook";
+import type { Page, Match, EbookOutline } from "@/backends/ebook";
 import type { Node } from "@/backends/ebook/node";
-import type { Metadata } from "@/backends/metadata";
+import type { Metadata } from "@/backends/backend";
 import {
   type Request,
   type Response,
   RequestType,
   type MuPdfMetadata,
 } from "@/backends/muPdf/communication";
-import type { Outline } from "@/backends/outline";
 import { useLogger } from "@/logging";
-import type { EbookColor } from "@/models";
 
 const { f, debug } = useLogger("muPdfProxy");
 
@@ -103,8 +101,8 @@ export class Proxy {
     return metadata;
   }
 
-  async getOutlines(): Promise<Outline[]> {
-    const outlines: Outline[] = await this.request(RequestType.GetOutlines);
+  async getOutlines(): Promise<EbookOutline[]> {
+    const outlines: EbookOutline[] = await this.request(RequestType.GetOutlines);
     return outlines;
   }
 
@@ -113,11 +111,33 @@ export class Proxy {
     return pages;
   }
 
-  async getImageData(index: number, color: EbookColor, scale: number): Promise<ImageData> {
+  async getImageBlob(
+    index: number,
+    scale: number,
+    background: string,
+    foreground: string,
+  ): Promise<Blob> {
+    const data: Uint8Array = await this.request(RequestType.GetImageArray, [
+      index,
+      scale,
+      background,
+      foreground,
+    ]);
+    const blob = new Blob([data], { type: "image/png" });
+    return blob;
+  }
+
+  async getImageData(
+    index: number,
+    scale: number,
+    background: string,
+    foreground: string,
+  ): Promise<ImageData> {
     const imageData: ImageData = await this.request(RequestType.GetImageData, [
       index,
-      color,
       scale,
+      background,
+      foreground,
     ]);
     return imageData;
   }
@@ -125,12 +145,6 @@ export class Proxy {
   async getNodes(index: number): Promise<Node[]> {
     const nodes: Node[] = await this.request(RequestType.GetNodes, [index]);
     return nodes;
-  }
-
-  async getBlob(index: number, color: EbookColor): Promise<Blob> {
-    const array: Uint8Array = await this.request(RequestType.GetArray, [index, color]);
-    const blob = new Blob([array], { type: "image/png" });
-    return blob;
   }
 
   async search(index: number, needle: string): Promise<Match[]> {

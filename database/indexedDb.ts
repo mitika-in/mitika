@@ -1,7 +1,6 @@
-import { Database } from "@/database/database";
-import { DatabaseEvent } from "@/database/databaseEvent";
+import { Database, DatabaseEvent } from "@/database/database";
 import { useLogger } from "@/logging";
-import { type Mark, type Note, type Item, type Book } from "@/models";
+import { type Object, ObjectType, type Item, type Book } from "@/models";
 
 const { f, debug } = useLogger("indexedDb");
 
@@ -27,18 +26,15 @@ function setupDatabase(database: IDBDatabase) {
   const storeOptions = { keyPath: "id" };
   const indexOptions = { unique: false, multiEntry: false };
 
-  const marks = database.createObjectStore("marks", storeOptions);
-  marks.createIndex("parentIndex", "parentId", indexOptions);
-
-  const notes = database.createObjectStore("notes", storeOptions);
-  notes.createIndex("parentIndex", "parentId", indexOptions);
+  const objects = database.createObjectStore("objects", storeOptions);
+  objects.createIndex("parentIndex", "itemId", indexOptions);
 
   const items = database.createObjectStore("items", storeOptions);
-  items.createIndex("parentIndex", "parentId", indexOptions);
+  items.createIndex("parentIndex", "bookId", indexOptions);
 
   database.createObjectStore("books", storeOptions);
 
-  database.createObjectStore("settings", { keyPath: "key" });
+  database.createObjectStore("settings");
 }
 
 /* upgradeN means upgrade from vN-1 to vN. */
@@ -142,46 +138,31 @@ export class IndexedDb extends Database {
     await promisifyTransaction(transaction);
   }
 
-  async putMark(mark: Mark) {
-    await this.put(mark, "marks");
+  async putObject(object: Object) {
+    await this.put(object, "objects");
 
-    this.emit(DatabaseEvent.Marks, null);
+    if (object.type == ObjectType.Mark) this.emit(DatabaseEvent.Marks, null);
+    else if (object.type == ObjectType.Note) this.emit(DatabaseEvent.Notes, null);
+    else this.emit(DatabaseEvent.Objects, null);
   }
 
-  async getMark(id: string): Promise<Mark> {
-    return this.get(id, "marks");
+  async getObject(id: string): Promise<Object> {
+    return this.get(id, "objects");
   }
 
-  async getMarks(parentId: string | null): Promise<Mark[]> {
-    const marks: Mark[] = await this.getAll("marks", parentId);
-    return marks.sort((a, b) => a.position.value - b.position.value);
+  async getObjects(itemId: string | null, type: ObjectType | null): Promise<Object[]> {
+    const objects: Object[] = await this.getAll("objects", itemId);
+    return objects
+      .filter((o) => (type != null ? o.type == type : true))
+      .sort((a, b) => a.position.value - b.position.value);
   }
 
-  async delMark(mark: Mark) {
-    await this.del(mark, "marks");
+  async delObject(object: Object) {
+    await this.del(object, "objects");
 
-    this.emit(DatabaseEvent.Marks, null);
-  }
-
-  async putNote(note: Note) {
-    await this.put(note, "notes");
-
-    this.emit(DatabaseEvent.Notes, null);
-  }
-
-  async getNote(id: string): Promise<Note> {
-    return this.get(id, "notes");
-  }
-
-  async getNotes(parentId: string | null): Promise<Note[]> {
-    const notes: Note[] = await this.getAll("notes", parentId);
-    return notes.sort((a, b) => a.position.value - b.position.value);
-  }
-
-  async delNote(note: Note) {
-    await this.del(note, "notes");
-
-    this.emit(DatabaseEvent.Notes, null);
+    if (object.type == ObjectType.Mark) this.emit(DatabaseEvent.Marks, null);
+    else if (object.type == ObjectType.Note) this.emit(DatabaseEvent.Notes, null);
+    else this.emit(DatabaseEvent.Objects, null);
   }
 
   async putItem(item: Item) {
@@ -194,28 +175,28 @@ export class IndexedDb extends Database {
     return this.get(id, "items");
   }
 
-  async getItems(parentId: string | null): Promise<Item[]> {
-    const items: Item[] = await this.getAll("items", parentId);
+  async getItems(bookId: string | null): Promise<Item[]> {
+    const items: Item[] = await this.getAll("items", bookId);
     return items.sort((a, b) => a.order - b.order);
   }
 
   async delItem(item: Item) {
     debug(f`Deleting ${item} from items`);
-    const transaction = this.database!.transaction(["marks", "notes", "items"], "readwrite");
-    for (const storeName of ["marks", "notes"]) {
-      const store = transaction.objectStore(storeName);
-      const index = store.index("parentIndex");
-      const req = index.openKeyCursor(item.id);
-      req.onsuccess = () => {
-        const cursor = req.result;
-        if (cursor) {
-          store.delete(cursor.primaryKey);
-          cursor.continue();
-        }
-      };
-    }
-    const store = transaction.objectStore("items");
-    store.delete(item.id!);
+    const transaction = this.database!.transaction(["objects", "items"], "readwrite");
+
+    const objects = transaction.objectStore("objects");
+    const index = objects.index("parentIndex");
+    const req = index.openKeyCursor(item.id);
+    req.onsuccess = () => {
+      const cursor = req.result;
+      if (cursor) {
+        objects.delete(cursor.primaryKey);
+        cursor.continue();
+      }
+    };
+
+    const items = transaction.objectStore("items");
+    items.delete(item.id!);
     await promisifyTransaction(transaction);
 
     this.emit(DatabaseEvent.Items, null);
@@ -226,7 +207,8 @@ export class IndexedDb extends Database {
     debug(f`  newItems: ${newItems}`);
     debug(f`  oldItems: ${oldItems}`);
     debug(f`  delItems: ${delItems}`);
-    const transaction = this.database!.transaction(["marks", "notes", "items"], "readwrite");
+    const transaction = this.database!.transaction(["objects", "items"], "readwrite");
+
     const items = transaction.objectStore("items");
     const setDelItems = new Set(delItems.map((item) => item.id!));
     const index = items.index("parentIndex");
@@ -235,18 +217,16 @@ export class IndexedDb extends Database {
       const cursor = req.result;
       if (cursor) {
         if (setDelItems.has(cursor.primaryKey as string)) {
-          for (const storeName of ["marks", "notes"]) {
-            const store = transaction.objectStore(storeName);
-            const index = store.index("parentIndex");
-            const req = index.openKeyCursor(cursor.primaryKey);
-            req.onsuccess = () => {
-              const cursor = req.result;
-              if (cursor) {
-                store.delete(cursor.primaryKey);
-                cursor.continue();
-              }
-            };
-          }
+          const objects = transaction.objectStore("objects");
+          const index = objects.index("parentIndex");
+          const req = index.openKeyCursor(cursor.primaryKey);
+          req.onsuccess = () => {
+            const cursor = req.result;
+            if (cursor) {
+              objects.delete(cursor.primaryKey);
+              cursor.continue();
+            }
+          };
           items.delete(cursor.primaryKey);
         }
         cursor.continue();
@@ -278,28 +258,24 @@ export class IndexedDb extends Database {
 
   async delBook(book: Book) {
     debug(f`Deleting ${book} from books`);
-    const transaction = this.database!.transaction(
-      ["marks", "notes", "items", "books"],
-      "readwrite",
-    );
+    const transaction = this.database!.transaction(["objects", "items", "books"], "readwrite");
+
     const items = transaction.objectStore("items");
     const index = items.index("parentIndex");
     const req = index.openKeyCursor(book.id);
     req.onsuccess = () => {
       const cursor = req.result;
       if (cursor) {
-        for (const storeName of ["marks", "notes"]) {
-          const store = transaction.objectStore(storeName);
-          const index = store.index("parentIndex");
-          const req = index.openKeyCursor(cursor.primaryKey);
-          req.onsuccess = () => {
-            const cursor = req.result;
-            if (cursor) {
-              store.delete(cursor.primaryKey);
-              cursor.continue();
-            }
-          };
-        }
+        const objects = transaction.objectStore("objects");
+        const index = objects.index("parentIndex");
+        const req = index.openKeyCursor(cursor.primaryKey);
+        req.onsuccess = () => {
+          const cursor = req.result;
+          if (cursor) {
+            objects.delete(cursor.primaryKey);
+            cursor.continue();
+          }
+        };
         items.delete(cursor.primaryKey);
         cursor.continue();
       }
@@ -317,7 +293,7 @@ export class IndexedDb extends Database {
     const store = transaction.objectStore("settings");
     const req = store.get(key);
     await promisifyTransaction(transaction);
-    if (req.result != null) return req.result.value;
+    if (req.result != null) return req.result;
     return fallback;
   }
 
@@ -325,7 +301,7 @@ export class IndexedDb extends Database {
     debug(f`Setting key: ${key} to value: ${value}`);
     const transaction = this.database!.transaction("settings", "readwrite");
     const store = transaction.objectStore("settings");
-    store.put({ key, value });
+    store.put(value, key);
     await promisifyTransaction(transaction);
   }
 }

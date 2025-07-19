@@ -20,6 +20,7 @@
   },
   "devDependencies": {
     "@trivago/prettier-plugin-sort-imports": "^5.2.2",
+    "@types/wicg-file-system-access": "^2023.10.6",
     "@vue/language-server": "^2.2.10",
     "daisyui": "^5.0.43",
     "prettier": "^3.6.0",

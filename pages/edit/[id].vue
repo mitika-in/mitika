@@ -43,24 +43,12 @@
         <label class="fieldset-label">
           {{ $t("Tags") }}
         </label>
-        <div class="flex flex-row flex-wrap items-center gap-2">
-          <Tag
-            v-for="tag in tags"
-            :key="tag"
-            :removable="true"
-            :text="tag"
-            @remove="onTagRemove(tag)"
-          />
-          <input
-            v-model.trim="editingTag"
-            class="input grow"
-            :placeholder="tags.length == 0 ? $t('Tags describing the book') : $t('… more tags')"
-            type="text"
-            @keyup.delete="onTagDelete"
-            @keyup.enter="addTag()"
-            @keyup.space="addTag()"
-          />
-        </div>
+        <input
+          v-model.trim="tags"
+          class="input w-full"
+          :placeholder="$t('Tags of the book')"
+          type="text"
+        />
       </fieldset>
       <fieldset class="fieldset">
         <legend class="fieldset-legend">
@@ -116,7 +104,7 @@ const items = ref([...originalItems.value]);
 
 const name = ref(book.value.name);
 const authors = ref(book.value.authors.join(","));
-const tags = ref([...book.value.tags]);
+const tags = ref(book.value.tags.join(","));
 const editingTag = ref("");
 
 function onBackClick() {
@@ -171,7 +159,10 @@ async function onSaveClick() {
     .split(",")
     .map((author) => author.trim())
     .filter((author) => author.length != 0);
-  book.value.tags = tags.value;
+  book.value.tags = tags.value
+    .split(",")
+    .map((tag) => tag.trim())
+    .filter((tag) => tag.length != 0);
   if (hasAudiobook && !hasEbook) book.value.openAudiobook = true;
   if (hasEbook && !hasAudiobook) book.value.openEbook = true;
 
@@ -183,27 +174,6 @@ async function onSaveClick() {
   }
 
   router.back();
-}
-
-function addTag() {
-  if (editingTag.value.length == 0) return;
-  const splits = editingTag.value.split(" ");
-  tags.value.push(splits[0]);
-  if (splits.length == 2) editingTag.value = splits[1];
-  else editingTag.value = "";
-}
-
-function onTagDelete(event: Event) {
-  if (editingTag.value.length != 0) return;
-
-  event.preventDefault();
-  if (tags.value.length == 0) return;
-  editingTag.value = tags.value.splice(tags.value.length - 1, 1)[0];
-}
-
-function onTagRemove(tag: string) {
-  const idx = tags.value.indexOf(tag);
-  tags.value.splice(idx, 1);
 }
 
 function onItemMove(item: Item, src: number, dst: number) {

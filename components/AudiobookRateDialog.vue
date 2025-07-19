@@ -108,6 +108,8 @@
 <script setup lang="ts">
 import { Constants } from "@/constants";
 
+const STEP = 0.25;
+
 interface Props {
   rate: number;
 }

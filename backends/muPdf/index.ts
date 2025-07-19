@@ -1,30 +1,20 @@
 import { Proxy } from "./proxy";
 import {
-  EbookBackend,
+  type EbookBackend,
   type Page,
   type EbookBackendOptions,
-  type EbookInitOptions,
+  type EbookOutline,
   type Match,
 } from "@/backends/ebook";
+import type { Metadata } from "@/backends/backend";
 import type { Node } from "@/backends/ebook/node";
-import { type Metadata } from "@/backends/metadata";
-import { type Outline } from "@/backends/outline";
-import { useLogger } from "@/logging";
-import { type EbookColor } from "@/models";
 
-const { f, debug } = useLogger("muPdf");
+export class MuPdf implements EbookBackend {
+  private proxy!: Proxy;
 
-export class MuPdf extends EbookBackend {
-  private proxy: Proxy;
-
-  constructor(backendOptions: EbookBackendOptions, initOptions: EbookInitOptions) {
-    super(backendOptions, initOptions);
-
-    this.proxy = new Proxy(backendOptions.passwordCb);
-  }
-
-  async open(blob: Blob, mimeType: string) {
-    await this.proxy.open(await blob.arrayBuffer(), mimeType);
+  async open(blob: Blob, type: string, options: EbookBackendOptions) {
+    this.proxy = new Proxy(options.passwordCb);
+    await this.proxy.open(await blob.arrayBuffer(), type);
   }
 
   async close() {
@@ -36,7 +26,7 @@ export class MuPdf extends EbookBackend {
     return metadata;
   }
 
-  async getOutlines(): Promise<Outline[]> {
+  async getOutlines(): Promise<EbookOutline[]> {
     const outlines = await this.proxy.getOutlines();
     return outlines;
   }
@@ -46,19 +36,29 @@ export class MuPdf extends EbookBackend {
     return pages;
   }
 
-  async getImageData(index: number, color: EbookColor, scale: number): Promise<ImageData> {
-    const imageData = await this.proxy.getImageData(index, color, scale);
+  async getImageBlob(
+    index: number,
+    scale: number,
+    background: string,
+    foreground: string,
+  ): Promise<Blob> {
+    const blob = await this.proxy.getImageBlob(index, scale, background, foreground);
+    return blob;
+  }
+
+  async getImageData(
+    index: number,
+    scale: number,
+    background: string,
+    foreground: string,
+  ): Promise<ImageData> {
+    const imageData = await this.proxy.getImageData(index, scale, background, foreground);
     return imageData;
   }
 
   async getNodes(index: number): Promise<Node[]> {
     const nodes = await this.proxy.getNodes(index);
     return nodes;
-  }
-
-  async getBlob(index: number, color: EbookColor): Promise<Blob> {
-    const blob = await this.proxy.getBlob(index, color);
-    return blob;
   }
 
   async search(index: number, needle: string): Promise<Match[]> {

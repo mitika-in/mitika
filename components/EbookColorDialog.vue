@@ -22,8 +22,8 @@
               class="radio"
               name="color"
               type="radio"
-              :value="entry[1]"
-              @change="onChange(entry[1])"
+              :value="[entry[1].background, entry[1].foreground]"
+              @change="onChange(entry[1].background, entry[1].foreground)"
             />
             {{ $t(entry[0]) }}
           </label>
@@ -33,24 +33,25 @@
   </Dialog>
 </template>
 <script setup lang="ts">
-import { ColorScheme, type EbookColor } from "@/models";
+import { ColorScheme } from "@/data";
 
 interface Props {
-  color: EbookColor;
+  background: string;
+  foreground: string;
 }
 
 interface Emits {
-  change: [color: EbookColor];
+  change: [background: string, foreground: string];
 }
 
-const { color } = defineProps<Props>();
+const { background, foreground } = defineProps<Props>();
 const emit = defineEmits<Emits>();
 
-const colorInput = ref(color);
+const colorInput = ref([background, foreground]);
 const dialog = useTemplateRef("dialog");
 
-function onChange(color: EbookColor) {
-  emit("change", color);
+function onChange(background: string, foreground: string) {
+  emit("change", background, foreground);
 }
 
 function toggle() {
@@ -59,10 +60,7 @@ function toggle() {
 
 defineExpose({ toggle });
 
-watch(
-  () => color,
-  () => {
-    colorInput.value = color;
-  },
-);
+watch([() => background, () => foreground], () => {
+  colorInput.value = [background, foreground];
+});
 </script>

@@ -28,7 +28,6 @@
             v-for="mark in filteredMarks"
             :key="mark.id"
             :mark="mark"
-            :type="item.type"
             @click="onClick(mark)"
             @remove="onRemove(mark)"
             @edit="onEdit(mark)"
@@ -47,7 +46,7 @@
 <script setup lang="ts">
 import { StatusType } from "@/components/statusType";
 import { type Database, DatabaseEvent, useDatabase } from "@/database";
-import { type Item, type Mark } from "@/models";
+import { type Item, type Mark, ObjectType } from "@/models";
 
 interface Props {
   item: Item;
@@ -80,15 +79,15 @@ function onClick(mark: Mark) {
 }
 
 async function onEdit(mark: Mark) {
-  await database!.putMark(toRaw(mark));
+  await database!.putObject(toRaw(mark));
 }
 
 async function onRemove(mark: Mark) {
-  await database!.delMark(toRaw(mark));
+  await database!.delObject(toRaw(mark));
 }
 
 async function onMarksChanged() {
-  marks.value = await database!.getMarks(item.id);
+  marks.value = (await database!.getObjects(item.id, ObjectType.Mark)) as Mark[];
 }
 
 function toggle() {

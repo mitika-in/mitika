@@ -67,7 +67,7 @@
           />
           <button
             class="btn btn-ghost hidden @2xs:flex"
-            @click="volumeDialog.toggle()"
+            @click="volumeDialog!.toggle()"
           >
             <VolumeXIcon
               v-if="audiobook.volume == 0"
@@ -84,25 +84,25 @@
           </button>
           <button
             class="btn btn-ghost hidden @xs:flex"
-            @click="rateDialog.toggle()"
+            @click="rateDialog!.toggle()"
           >
             <WatchIcon class="size-4" />
           </button>
           <button
             class="btn btn-ghost hidden @sm:flex"
-            @click="addNoteDialog.toggle()"
+            @click="addNoteDialog!.toggle()"
           >
             <FilePlusIcon class="size-4" />
           </button>
           <button
             class="btn btn-ghost hidden @md:flex"
-            @click="marksDialog.toggle()"
+            @click="marksDialog!.toggle()"
           >
             <TagIcon class="size-4" />
           </button>
           <button
             class="btn btn-ghost hidden @md:flex"
-            @click="notesDialog.toggle()"
+            @click="notesDialog!.toggle()"
           >
             <LayersIcon class="size-4" />
           </button>
@@ -117,7 +117,7 @@
             <template #content>
               <ul class="menu bg-base-100 w-64 rounded-sm shadow-sm">
                 <li class="@3xs:hidden">
-                  <button @click="outlinesDialog.toggle()">
+                  <button @click="outlinesDialog!.toggle()">
                     {{ $t("Outlines") }}
                   </button>
                 </li>
@@ -128,27 +128,27 @@
                   />
                 </li>
                 <li class="@2xs:hidden">
-                  <button @click="volumeDialog.toggle()">
+                  <button @click="volumeDialog!.toggle()">
                     {{ $t("Volume") }}
                   </button>
                 </li>
                 <li class="@xs:hidden">
-                  <button @click="rateDialog.toggle()">
+                  <button @click="rateDialog!.toggle()">
                     {{ $t("Rate") }}
                   </button>
                 </li>
                 <li class="@sm:hidden">
-                  <button @click="addNoteDialog.toggle()">
+                  <button @click="addNoteDialog!.toggle()">
                     {{ $t("Add note") }}
                   </button>
                 </li>
                 <li class="@md:hidden">
-                  <button @click="marksDialog.toggle()">
+                  <button @click="marksDialog!.toggle()">
                     {{ $t("Marks") }}
                   </button>
                 </li>
                 <li class="@md:hidden">
-                  <button @click="notesDialog.toggle()">
+                  <button @click="notesDialog!.toggle()">
                     {{ $t("Notes") }}
                   </button>
                 </li>
@@ -195,14 +195,18 @@
   </div>
 </template>
 <script setup lang="ts">
-import { useAudiobookBackend, type AudiobookBackend } from "@/backends";
-import { type Metadata } from "@/backends/metadata";
-import { type Outline } from "@/backends/outline";
+import {
+  useAudiobookBackend,
+  type AudiobookBackend,
+  type Metadata,
+  type AudiobookOutline,
+} from "@/backends";
 import { useDatabase } from "@/database";
 import { useLogger } from "@/logging";
-import { type Audiobook, type Mark, type Note, type Position } from "@/models";
+import { type Audiobook, type Mark, type Note, type AudiobookPosition } from "@/models";
 import { useSource } from "@/sources";
 import { formatToTimestamp } from "@/utils";
+import { QUERY_POSITION_NAME } from "@/components/keys";
 
 const { f, debug } = useLogger("audiobookPlayer");
 
@@ -221,7 +225,7 @@ const emit = defineEmits<Emits>();
 const database = await useDatabase();
 const source = await useSource();
 
-const outlines: Ref<Outline[]> = ref([]);
+const outlines: Ref<AudiobookOutline[]> = ref([]);
 const playing = ref(false);
 let backend: AudiobookBackend | null = null;
 
@@ -236,34 +240,34 @@ const volumeDialog = useTemplateRef("volumeDialog");
 
 async function onOpenMark(mark: Mark) {
   debug(`Opening mark: ${mark.name}`);
-  await backend!.setPosition(mark.position);
+  await backend!.setPosition(mark.position.value);
 }
 
 async function onOpenNote(note: Note) {
   debug(`Opening note: ${note.name}`);
-  await backend!.setPosition(note.position);
+  await backend!.setPosition(note.position.value);
 }
 
-async function onOpenOutline(outline: Outline) {
+async function onOpenOutline(outline: AudiobookOutline) {
   debug(`Opening outline: ${outline.name}`);
   await backend!.setPosition(outline.position);
 }
 
-async function onPositionChanged(position: Position) {
-  audiobook!.position = position;
+async function onPositionChanged(value: number) {
+  audiobook!.position.value = value;
 }
 
 async function onEnd() {
-  debug(`Playback ended`);
+  debug("Playback ended");
   playing.value = false;
   await backend!.pause();
-  await backend!.setPosition({ value: 0 });
+  await backend!.setPosition(0);
 }
 
 async function onPositionChange(event: Event) {
   const value = Number((event.target as HTMLInputElement).value);
   debug(`Changing to position: ${value}`);
-  await backend!.setPosition({ value });
+  await backend!.setPosition(value);
 }
 
 async function onRateChange(rate: number) {
@@ -289,42 +293,30 @@ async function onVolumeChange(volume: number) {
   audiobook.volume = volume;
 }
 
-function onAddNoteClick() {
-  addNoteDialog.value!.show();
-}
-
-function onMarksClick() {
-  marksDialog.value!.show();
-}
-
-function onNotesClick() {
-  notesDialog.value!.show();
-}
-
 async function open(audiobook: Audiobook) {
   debug(f`Opening: ${audiobook}`);
-  const ctor = useAudiobookBackend(audiobook.file.type);
-  debug(f`Using backend: ${ctor.name}`);
+
+  backend = useAudiobookBackend(audiobook.file.type);
+  debug(f`Using backend: ${backend.constructor.name}`);
+
   if (audiobook.openingFirstTime) {
     audiobook.openingFirstTime = false;
   }
-  backend = new ctor(
-    {
-      passwordCb: console.error,
-      positionCb: onPositionChanged,
-      endedCb: onEnd,
-    },
-    {
-      position: audiobook.position,
-      rate: audiobook.rate,
-      volume: audiobook.volume,
-    },
-  );
+
   const blob = await source.readFile(audiobook.file);
-  await backend!.open(blob, audiobook.file.type);
+  await backend!.open(blob, audiobook.file.type, {
+    passwordCb: console.error,
+    positionCb: onPositionChanged,
+    endedCb: onEnd,
+  });
+
   audiobook.length = await backend!.getLength();
-  outlines.value = await backend!.getOutlines();
-  emit("metadata", await backend!.getMetadata());
+  backend!.setPosition(audiobook.position.value);
+  backend!.setRate(audiobook.rate);
+  backend!.setVolume(audiobook.volume);
+
+  window.setTimeout(async () => (outlines.value = await backend!.getOutlines()));
+  window.setTimeout(async () => emit("metadata", await backend!.getMetadata()));
 }
 
 async function close(audiobook: Audiobook) {
@@ -334,6 +326,12 @@ async function close(audiobook: Audiobook) {
   backend = null;
   await database.putItem(toRaw(audiobook));
 }
+
+function queryPositionName(position: AudiobookPosition): string {
+  return formatToTimestamp(position.value, hoursLength.value);
+}
+
+provide(QUERY_POSITION_NAME, queryPositionName);
 
 watch(
   () => audiobook,

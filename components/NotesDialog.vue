@@ -28,7 +28,6 @@
             v-for="note in filteredNotes"
             :key="note.id"
             :note="note"
-            :type="item!.type"
             @click="onClick(note)"
             @remove="onRemove(note)"
             @edit="onEdit(note)"
@@ -47,7 +46,7 @@
 <script setup lang="ts">
 import { StatusType } from "@/components/statusType";
 import { type Database, DatabaseEvent, useDatabase } from "@/database";
-import { type Item, type Note } from "@/models";
+import { type Item, type Note, ObjectType } from "@/models";
 
 interface Props {
   item: Item;
@@ -82,15 +81,15 @@ function onClick(note: Note) {
 }
 
 async function onEdit(note: Note) {
-  await database!.putNote(toRaw(note));
+  await database!.putObject(toRaw(note));
 }
 
 async function onRemove(note: Note) {
-  await database!.delNote(toRaw(note));
+  await database!.delObject(toRaw(note));
 }
 
 async function onNotesChanged() {
-  notes.value = await database!.getNotes(item.id);
+  notes.value = (await database!.getObjects(item.id, ObjectType.Note)) as Note[];
 }
 
 function toggle() {

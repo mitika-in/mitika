@@ -108,7 +108,7 @@ const dialog = useTemplateRef("dialog");
 function onChange(event: Event) {
   let newScale = Number((event.target as HTMLInputElement).value) / 100;
   if (isNaN(newScale)) {
-    (event.target as HTMLInputElement).value = Math.floor(scale * 100);
+    (event.target as HTMLInputElement).value = Math.floor(scale * 100).toString();
     return;
   }
   newScale = Math.min(Math.max(newScale, Constants.EBOOK_MIN_SCALE), Constants.EBOOK_MAX_SCALE);
